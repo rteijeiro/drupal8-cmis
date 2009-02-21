@@ -1,0 +1,132 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Search functions
+ */
+
+/**
+ * Implementation of hook_menu() for CMIS search module.
+ */
+
+function cmis_query_menu() {
+  $items = array ();
+  $items['cmis/query'] = array (
+    'type' => MENU_NORMAL_ITEM,
+    'title' => t('CMIS Query'), 
+    'page callback' => 'drupal_get_form', 
+    'page arguments' => array ('cmis_query_form'), 
+    'access callback' => 'user_access', 
+    'access arguments' => array ('access cmis'),
+  );
+
+  return $items;
+}
+
+/**
+ * Render form for searching CMIS respository.
+ */
+function cmis_query_form(& $form_state) {
+
+  if (isset ($form_state['storage']['query_result'])) {
+    $form['#suffix'] = $form_state['storage']['query_result'];
+  }
+
+  $cmis_query = array (
+    '#type' => 'fieldset',
+    '#title' => t('Search the repository using CMIS SQL 1.0 queries.'), 
+    '#collapsible' => TRUE, 
+    '#collapsed' => FALSE,
+  );
+
+  $cmis_query['cmis_query'] = array (
+    '#type' => 'textarea',
+    '#title' => t('Query'), '#size' => 50);
+
+  $cmis_query['cmis_query_submit'] = array (
+    '#type' => 'submit',
+    '#value' => t('Run'), 
+    '#submit' => array ('cmis_query_form_submit'),
+  );
+
+  $form['statement'] = $cmis_query;
+
+  return $form;
+}
+
+/**
+ * Form submit for cmis_query_form
+ */
+function cmis_query_form_submit($form, & $form_state) {
+  $form_state['storage']['query_result'] = cmis_query_cmis_query($form_state['values']['cmis_query']);
+}
+
+/**
+ * Executes CMIS search and process search return.
+ * $query CMIS SQL query.
+ */
+function cmis_query_cmis_query($query, $p = 1) {
+  module_load_include('api.inc', 'cmis');
+
+  // Set default page size
+  $default_page_size = 10;
+  $skip_count = ($p -1) * $default_page_size;
+
+  $repository = cmisapi_getRepositoryInfo();
+  $query_result = cmisapi_query($repository->repositoryId, $query);
+
+  if (false !== $query_result) {
+    // Process the returned XML
+    $contents = "<br/><b>Query results</b><br/>";
+    $header = array (t('name'), t('type'), t('size'), t('author'), t('last modified'));
+
+    $folder_img = theme('image', drupal_get_path('module', 'cmis_browser') . '/images/space.gif');
+    $file_img = theme('image', drupal_get_path('module', 'cmis_browser') . '/images/file.png');
+
+    for ($i = $skip_count; $i < sizeof($query_result); $i++) {
+      $entry = $query_result[$i];
+      if (empty ($entry->title))
+        continue;
+      $summary = $entry->summary;
+      $type = $entry->type;
+      $updated = $entry->updated;
+      if ($updated)
+        $updatedStr = date_format($updated, 'n/j/Y g:i A');
+
+      if ($type == 'folder') {
+        $folderlink = l($entry->title, 'cmis/browser' . $path . '/' . $entry->title);
+        $rows[] = array ($folder_img . ' ' . $folderlink, 'Space', '', $entry->author, $updatedStr);
+      } 
+      else {
+        $size = $entry->size;
+        $docType = $entry->contentMimeType;
+        $icon = $entry->icon;
+        $documentLink = l($entry->title, 'cmis/get', array ('query' => array ('id' => $entry->id)));
+
+        $rows[] = array ($file_img . $documentLink, $docType, number_format($size / 1000, 2, '.', ',') . ' K', $entry->author, $updatedStr);
+      }
+    }
+
+    $contents .= theme('table', $header, $rows);
+
+    // Add pagination bar
+    /* pagination disabled temp  
+    $base_search_url = 'cmis/query/?query='.$query.'&p=';
+    $next_p = $p+1;
+    $prev_p = $p-1;
+    
+    $contents .= '<div class="pagination">';
+    if($p!=1)
+          $contents .= l(t('Prev'), $base_search_url.$prev_p); 
+          
+    // Check to see if it has next
+    $contents .= l(t('Next'), $base_search_url.$next_p);*/
+
+    $contents .= '</div>';
+  } 
+  else {
+    $contents = 'Error';
+  }
+  return $contents;
+}

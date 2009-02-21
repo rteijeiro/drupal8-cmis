@@ -1,0 +1,6 @@
+; $Id$
+name = CMIS Content
+description = Allows users to create CMIS content items
+package = CMIS
+dependencies[] = cmis
+core = "6.x"

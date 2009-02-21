@@ -1,0 +1,6 @@
+; $Id$
+name = CMIS Dev
+description = Provides CMIS developer tools  
+package = CMIS
+dependencies[] = cmis
+core = "6.x"

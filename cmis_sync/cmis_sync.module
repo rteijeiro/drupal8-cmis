@@ -1,0 +1,166 @@
+<?php
+// $Id$
+
+/**
+*Implementation of hook_nodeapi
+*/
+function cmis_sync_nodeapi(& $node, $op, $teaser, $page) {
+  if ($node->cmis_objectId) {
+    return;
+  }
+
+  module_load_include('api.inc', 'cmis');
+  switch ($op) {
+    case 'insert' :
+      $cmis_sync_root_folder = variable_get("cmis_sync_root_folder", null);
+
+      if (empty ($cmis_sync_root_folder)) {
+        watchdog(WATCHDOG_ERROR, '"cmis_sync_root_folder" not set');
+        drupal_set_message(t('"cmis_sync_root_folder" not set. Synconization with CMIS repository will not work as espected.'), 'error');
+        return false;
+      }
+
+      $repository = cmisapi_getRepositoryInfo();
+      $folderId = cmisapi_getProperties($repository->repositoryId, drupal_urlencode($cmis_sync_root_folder));
+
+      $objectId = cmisapi_createDocument($repository->repositoryId, 'document', array ('content-type' => 'text/html', 'title' => $node->title), $folderId->id, $node->body);
+      db_query('INSERT INTO {cmis_sync_node} (nid, cmis_objectId, changed_timestamp) VALUES (%d, \'%s\', %d)', $node->nid, $objectId, $_SERVER['REQUEST_TIME']);
+      break;
+
+    case 'update' :
+      if ($cmis_node_sync = db_fetch_object(db_query('SELECT cmis_objectId FROM {cmis_sync_node} WHERE nid = %d', $node->nid))) {
+        $repository = cmisapi_getRepositoryInfo();
+        cmisapi_setContentStream($repository->repositoryId, $cmis_node_sync->cmis_objectId, True, $node->body, array (
+          'content-type' => 'text/html',
+          'title' => $node->title,
+        ));
+        db_query('UPDATE {cmis_sync_node} SET changed_timestamp=%d WHERE nid = %d', $_SERVER['REQUEST_TIME'], $node->nid);
+      }
+      break;
+  }
+}
+
+/**
+ *  Implementation of hook_cron
+ *  @todo: handle SQL injection for CMIS query calls. Low priority. 
+ */
+function cmis_sync_cron() {
+  $cmis_sync_root_folder = variable_get("cmis_sync_root_folder", null);
+
+  if (empty ($cmis_sync_root_folder)) {
+    watchdog(WATCHDOG_ERROR, '"cmis_sync_root_folder" not set');
+    drupal_set_message(t('"cmis_sync_root_folder" not set. Synconization with CMIS repository will not work as espected.'), 'error');
+    return false;
+  }
+
+  module_load_include('api.inc', 'cmis');
+  module_load_include('inc', 'node', 'node.pages');
+
+  $repository = cmisapi_getRepositoryInfo();
+  $folderId = cmisapi_getProperties($repository->repositoryId, drupal_urlencode($cmis_sync_root_folder));
+
+  $cmis_updates = cmisapi_query($repository->respositoryId, sprintf('SELECT * FROM document WHERE IN_FOLDER(\'%s\') AND LastModificationDate > \'%s\'', $folderId->id, date_create('today')->format("Y-m-d\TH:i:s.000-00:00")));
+
+  foreach ($cmis_updates as $cmis_update) {
+    if (isset ($cmis_update->versionSeriesCheckedOutBy))
+      continue;
+    if ($cmis_node_sync = db_fetch_object(db_query('SELECT nid, changed_timestamp FROM {cmis_sync_node} WHERE cmis_objectId = \'%s\'', $cmis_update->id))) {
+      if (date('Y-m-d\TH:i', $cmis_node_sync->changed_timestamp) < $cmis_update->updated->format('Y-m-d\TH:i')) {
+        $node = node_load($cmis_node_sync->nid);
+        $node->cmis_objectId = $cmis_update->id;
+        $node->title = $cmis_update->title;
+        $node->body = cmisapi_getContentStream($repository->repositoryId, $cmis_update->id);
+        node_save($node);
+        db_query('UPDATE {cmis_sync_node} SET changed_timestamp=%d WHERE nid = %d', $_SERVER['REQUEST_TIME'], $node->nid);
+        drupal_set_message('Updated nid:' . $node->nid);
+      }
+    } else {
+      $new_node = new stdClass();
+      $new_node->cmis_objectId = $cmis_update->id;
+      $new_node->title = $cmis_update->title;
+      $new_node->body = cmisapi_getContentStream($repository->repositoryId, $cmis_update->id);
+      $new_node->type = variable_get('cmis_sync_node_type', 'story');
+      $new_node->status = variable_get('cmis_sync_node_status', 1);
+      $new_node->promote = variable_get('cmis_sync_node_promote', 1);
+      $new_node->sticky = variable_get('cmis_sync_node_sticky', 0);
+
+      node_object_prepare($new_node);
+      node_save($new_node);
+
+      db_query('INSERT INTO {cmis_sync_node} (nid, cmis_objectId, changed_timestamp) VALUES (%d, \'%s\', %d)', $new_node->nid, $cmis_update->id, $_SERVER['REQUEST_TIME']);
+      drupal_set_message('Added nid:' . $new_node->nid);
+    }
+  }
+}
+
+/**
+ * Implementation of hook_menu() for CMIS sync module.
+ */
+function cmis_sync_menu() {
+  $items['admin/settings/cmis/sync'] = array (
+    'title' => 'CMIS Sync',
+    'description' => 'Keeps Drupal nodes and CMIS content in sync',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array ('cmis_sync_admin_settings'),
+    'access callback' => 'user_access',
+    'access arguments' => array ('administer cmis'),
+  );
+  return $items;
+}
+
+/**
+ * Implementation of admin_settings pseudo hook
+ */
+function cmis_sync_admin_settings() {
+  $form['cmis_sync_settings'] = array (
+    '#type' => 'fieldset',
+    '#title' => t('CMIS Sync'), 
+    '#description' => t('Settings for cmis sync'), 
+    '#collapsible' => FALSE, '#collapsed' => FALSE,
+  );
+
+  $form['cmis_sync_settings']['cmis_sync_root_folder'] = array (
+    '#type' => 'textfield',
+    '#title' => t('CMIS folder'), 
+    '#default_value' => variable_get('cmis_sync_root_folder', null), 
+    '#autocomplete_path' => 'cmis/autocomplete', 
+    '#description' => t('CMIS folder to which drupal content is syncronized.'),
+  );
+
+  $cmis_sync_defaults = array (
+    '#type' => 'fieldset',
+    '#title' => t('Default settings for CMIS nodes created by the sync process'), 
+    '#collapsible' => TRUE, 
+    '#collapsed' => FALSE, 
+    '#weight' => 20,
+  );
+
+  $cmis_sync_defaults['cmis_sync_node_type'] = array (
+    '#type' => 'select',
+    '#title' => t('Type'), 
+    '#options' => node_get_types('names'), 
+    '#default_value' => variable_get('cmis_sync_node_type', 'story'),
+  );
+
+  $cmis_sync_defaults['cmis_sync_node_status'] = array (
+    '#type' => 'checkbox',
+    '#title' => t('Published'), 
+    '#default_value' => variable_get('cmis_sync_node_status', 1),
+  );
+
+  $cmis_sync_defaults['cmis_sync_node_promote'] = array (
+    '#type' => 'checkbox',
+    '#title' => t('Promote to front page'), 
+    '#default_value' => variable_get('cmis_sync_node_promote', 1),
+  );
+
+  $cmis_sync_defaults['cmis_sync_node_sticky'] = array (
+    '#type' => 'checkbox',
+    '#title' => t('Sticky'), 
+    '#default_value' => variable_get('cmis_sync_node_sticky', 0),
+  );
+
+  $form['cmis_sync_settings']['cmis_sync_node'] = $cmis_sync_defaults;
+
+  return system_settings_form($form);
+}

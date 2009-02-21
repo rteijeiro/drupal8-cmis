@@ -1,0 +1,34 @@
+<?php
+// $Id$
+
+/**
+ * Implementation of hook_menu()
+ */
+function cmis_dev_menu() {
+  $items['cmis/info'] = array(
+    'type' => MENU_NORMAL_ITEM,
+    'title' => t('CMIS Information'),
+    'page callback' => 'cmis_dev_info',
+    'access callback' => 'user_access'    
+  );
+return $items;
+}
+
+/**
+ * Return CMIS Repository Information such as repo name, repo description, 
+ * vendor name, product name and product version.
+ */
+function cmis_dev_info(){
+  module_load_include('api.inc', 'cmis');
+  $repository = cmisapi_getRepositoryInfo();
+	$rows=array(
+        array( t('Name'),        $repository->repositoryName),
+        array( t('Id'),          $repository->repositoryId),
+        array( t('rootFolderId'),$repository->rootFolderId),
+        array( t('Description'), $repository->RepositoryDescription),
+        array( t('Vendor'),      $repository->vendorName),
+        array( t('Version'),     $repository->productVersion),
+  );
+    
+  return theme('table', array(t('Name'), t('Properties')), $rows);
+}

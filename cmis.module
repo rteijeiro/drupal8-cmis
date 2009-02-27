@@ -7,7 +7,7 @@
  * @return array
  */
 function cmis_get_vendors() {
-  $vendors = array ();
+  $vendors = array();
   $info_array = module_invoke_all('cmis_info');
   foreach ($info_array as $type => $info) {
     $info['type'] = $type;
@@ -34,7 +34,7 @@ function cmis_vendor_invoke() {
 
   $vendors = cmis_get_vendors();
   if (array_key_exists($vendor, $vendors)) {
-    unset ($args[0]);
+    unset($args[0]);
     $function = $vendor . '_cmisapi_' . $cmis_method;
     if (function_exists($function)) {
       return call_user_func_array($function, $args);
@@ -50,22 +50,22 @@ function cmis_vendor_invoke() {
  * Implementation of hook_menu() for CMIS module.
  */
 function cmis_menu() {
-  $items = array ();
-  $items['admin/settings/cmis'] = array (
+  $items = array();
+  $items['admin/settings/cmis'] = array(
     'title' => 'CMIS Settings',
     'description' => 'Connection settings to CMIS repositories',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array ('cmis_admin_settings'),
+    'page arguments' => array('cmis_admin_settings'),
     'access callback' => 'user_access',
-    'access arguments' => array ('administer cmis'),
+    'access arguments' => array('administer cmis'),
     
   );
 
-  $items['cmis/autocomplete'] = array (
+  $items['cmis/autocomplete'] = array(
     'title' => t('cmis path autocomplete'), 
     'page callback' => 'cmis_path_autocomplete', 
     'access callback' => 'user_access', 
-    'access arguments' => array ('access cmis'), 
+    'access arguments' => array('access cmis'), 
     'type' => MENU_CALLBACK,
   );
 
@@ -76,12 +76,12 @@ function cmis_menu() {
  * Prepare and generate entry form for CMIS settings.
  */
 function cmis_admin_settings() {
-  $vendors = array ('None');
+  $vendors = array('None');
   foreach (cmis_get_vendors() as $key => $vendor) {
     $vendors[$key] = $vendor['name'];
   }
 
-  $form['cmis_settings'] = array (
+  $form['cmis_settings'] = array(
     '#type' => 'fieldset',
     '#title' => t('CMIS Settings'), 
     '#description' => t('Settings for cmis repositories'), 
@@ -89,7 +89,7 @@ function cmis_admin_settings() {
     '#collapsed' => FALSE,
   );
 
-  $form['cmis_settings']['cmis_vendor'] = array (
+  $form['cmis_settings']['cmis_vendor'] = array(
     '#type' => 'select',
     '#title' => t('Vendors'), 
     '#default_value' => variable_get('cmis_vendor', null), 
@@ -114,7 +114,7 @@ function cmis_admin_settings_validate($form, & $form_state) {
  * Return permissions for the CMIS module.
  */
 function cmis_perm() {
-  $perms = array (
+  $perms = array(
     'administer cmis',
     'access cmis',
   );
@@ -129,14 +129,14 @@ function cmis_path_autocomplete() {
 
   $args = func_get_args();
   $path = '/' . implode('/', array_slice($args, 0, sizeof($args) - 1));
-  $key = $args[sizeof($args) - 1];
+  $key = end($args);
 
-  $matches = array ();
+  $matches = array();
   $repository = cmisapi_getRepositoryInfo();
 
   if ($path == '/') {
     $folderId_parts = explode('/', $repository->rootFolderId);
-    $path = '/' . $folderId_parts[sizeof($folderId_parts) - 1];
+    $path = '/' . end($folderId_parts);
 
     $matches[$path] = $path;
     print drupal_to_js($matches);
@@ -145,10 +145,10 @@ function cmis_path_autocomplete() {
 
   $folderObject = cmisapi_getProperties($repository->repositoryId, drupal_urlencode($path));
 
-  foreach (array ('folder', 'document') as $cmis_base_type) {
-    $cmis_objects = cmisapi_query($repository->repositoryId, "SELECT * FROM $cmis_base_type WHERE Name like '%$key%' AND IN_FOLDER('$folderObject->id')");
+  foreach (array('folder', 'document') as $cmis_base_type) {
+    $cmis_objects = cmisapi_query($repository->repositoryId, "SELECT * FROM $cmis_base_type WHERE ".($key!='*'?"Name like '%$key%' AND":"")." IN_FOLDER('$folderObject->id')");
     foreach ($cmis_objects as $cmis_object) {
-      $matches[($path . '/' . $cmis_object->title . ($cmis_base_type == 'folder' ? '/' : ''))] = $cmis_object->title;
+      $matches[$path . '/' . $cmis_object->title . ($cmis_base_type == 'folder' ? '/' : '')] = $cmis_object->title;
     }
   }
 

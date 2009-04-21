@@ -122,8 +122,6 @@ function cmis_query_cmis_query($query, $p = 1) {
           
     // Check to see if it has next
     $contents .= l(t('Next'), $base_search_url.$next_p);*/
-
-    $contents .= '</div>';
   } 
   else {
     $contents = 'Error';

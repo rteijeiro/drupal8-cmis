@@ -4,7 +4,7 @@
 /**
  * Implementation of hook_menu() for CMIS module.
  */
-function cmis_content_menu(){
+function cmis_content_menu() {
   $items = array();
   $items['cmis/create'] = array(
     'type' => MENU_NORMAL_ITEM,
@@ -21,15 +21,24 @@ function cmis_content_menu(){
     'access arguments' => array('access cmis'),    
   );
   
+  $items['cmis/block_settings_more_items_js'] = array(
+    'page callback' => 'cmis_block_settings_more_items_js',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+  
   return $items;
 }
 
 /**
  * Register custom themes for CMIS module.
  */
-function cmis_content_theme(){
+function cmis_content_theme() {
   return array(
-    'cmis_content_create_form'=>array(
+    'cmis_content_create_form' => array(
+      'arguments' => array('form' => null),
+    ),
+    'cmis_content_block_settings' => array(
       'arguments' => array('form' => NULL),
     )
   );
@@ -38,7 +47,7 @@ function cmis_content_theme(){
 /**
  * Custom theme for CMIS content creation form.
  */
-function theme_cmis_content_create_form($form){
+function theme_cmis_content_create_form($form) {
   $rows = array(
     array(
       drupal_render($form['create']['path']),      
@@ -61,12 +70,20 @@ function theme_cmis_content_create_form($form){
 }
 
 /**
+ * Custom theme for CMIS document view block settings form
+ * TODO: Implement Add/Delete/Order here (hint: use drupal_add_tabledrag for order)
+ */
+function theme_cmis_content_block_settings($form){  
+  return drupal_render($form); 
+}
+
+/**
  * Implementation of CMIS content creation page.
  * Allows user to create a text or html file and upload it to CMIS repository.
  * Required input from user is the space path where the content will be stored.
  * Optional inputs include content description, author etc.
  */
-function cmis_content_create(){
+function cmis_content_create() {
   drupal_add_css(drupal_get_path('module', 'cmis_content').'/cmis_content.css');
   $contents = '';
   $contents .= drupal_get_form('cmis_content_create_form');
@@ -77,7 +94,7 @@ function cmis_content_create(){
 /**
  * CMIS content creation form builder.
  */
-function cmis_content_create_form($form_state){
+function cmis_content_create_form($form_state) {
 	$parts = explode('/', $_GET['q']);
 	$path = implode('/', array_slice($parts, 2));
 
@@ -112,7 +129,7 @@ function cmis_content_create_form($form_state){
 /**
  * Handle content create form submission.
  */
-function cmis_content_create_form_submit($form, &$form_state){
+function cmis_content_create_form_submit($form, &$form_state) {
   module_load_include('api.inc', 'cmis');
     
   $path = $form_state['values']['path'];
@@ -125,18 +142,18 @@ function cmis_content_create_form_submit($form, &$form_state){
   
   if (!$path) {
     $folderId_parts =  explode('/', $repository->rootFolderId);
-    $path = '/'.$folderId_parts[sizeof($folderId_parts)-1];
+    $path = '/'.end($folderId_parts);
   }
     
   $cmis_object = cmisapi_getProperties($repository->repositoryId, drupal_urlencode($path));
   
-  if (false===$cmis_object) {
+  if (false === $cmis_object) {
     drupal_set_message(t('Failed to locate the target space with path '.$path));
     $form_state['redirect'] = 'cmis/create';
   }
   else {
-  	if ($cmis_object->type=='folder') {
-      $objectId = cmisapi_createDocument($repository->repositoryId, 'document', array('content-type'=>'text/html', 'title'=>$name), $cmis_object->id, $content);
+  	if ($cmis_object->type == 'folder') {
+      $objectId = cmisapi_createDocument($repository->repositoryId, 'document', array('content-type' => 'text/html', 'title' => $name), $cmis_object->id, $content);
       if ($objectId) {
   		  drupal_set_message('CMIS content '.$name.' has been created.');
   			$form_state['redirect'] = 'cmis/browser'.$path;
@@ -158,7 +175,7 @@ function cmis_content_create_form_submit($form, &$form_state){
  * Handle content download 
  * @todo: input validation 
  */
-function cmis_content_get(){
+function cmis_content_get() {
   module_load_include('api.inc', 'cmis');
   
   $objectId = urldecode($_GET['id']);
@@ -183,7 +200,7 @@ function cmis_content_get(){
 /**
  * Implementation of hook_block() for CMIS content module.
  */
-function cmis_content_block($op='list', $delta=0, $edit=array()) {
+function cmis_content_block($op = 'list', $delta = 0, $edit = array()) {
   switch ($op) {
     case 'list':
       // If $op is "list", we just need to return a list of block descriptions.
@@ -203,39 +220,43 @@ function cmis_content_block($op='list', $delta=0, $edit=array()) {
     //  'pages'      => 'node/*',
     //);
     return $blocks;
-    
+
   case 'configure':
     // If $op is "configure", we need to provide the administrator with a
     // configuration form. The $delta parameter tells us which block is being
     // configured. In this example, we'll allow the administrator to customize
     // the text of the first block.
-    $form = array();
+    $form = array(
+      '#cache' => TRUE,
+    );
     if ($delta == 0) {
-        // All we need to provide is a text field, Drupal will take care of
-        // the other block configuration options and the save button.
-    	$form['cmis_target_document'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Target document path'),
-        '#size' => 60,
-        '#description' => t('The document path relative to the root of the repository.'),
-        '#default_value' => variable_get('cmis_target_document',  '/'),
-        '#autocomplete_path' => 'cmis/autocomplete'
+      // All we need to provide is a text field, Drupal will take care of
+      // the other block configuration options and the save button.
+      $form['cmis_target_document_items'] = array(
+        '#tree' => TRUE,
+        '#prefix' => '<div class="clear-block" id="cmis-content-items-wrapper">',
+        '#suffix' => '</div>'
       );
-      $form['cmis_target_document_2'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Target document path'),
-        '#size' => 60,
-        '#description' => t('The document path relative to the root of the repository.'),
-        '#default_value' => variable_get('cmis_target_document_2',  '/'),
-        '#autocomplete_path' => 'cmis/autocomplete'
-      );        
-      $form['cmis_target_document_3'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Target document path'),
-        '#size' => 60,
-        '#description' => t('The document path relative to the root of the repository.'),
-        '#default_value' => variable_get('cmis_target_document_3',  '/'),
-        '#autocomplete_path' => 'cmis/autocomplete'
+      
+      $cmis_block_items = variable_get('cmis_target_document_items', array_fill(0,2,'/'));
+      // Making sure that there is at least one item
+      $cmis_block_items += count($cmis_block_items)==0?array('/'):array();
+      
+      foreach ($cmis_block_items as $key=>$item) {
+        $form['cmis_target_document_items'][] = _cmis_content_block_settings_path_form($key, $item);
+      }
+      
+      $form['cmis_target_document_items_more'] = array(
+        '#type' => 'submit',
+        '#value' => t('Add more'),
+        '#description' => t("If the amount of boxes above isn't enough, click here to add more."),
+        '#weight' => 1,
+        '#ahah' => array(
+          'path' => 'cmis/block_settings_more_items_js',
+          'wrapper' => 'cmis-content-items-wrapper',
+          'method' => 'replace',
+          'effect' => 'fade',
+        ),
       );
     }
     return $form;
@@ -244,10 +265,17 @@ function cmis_content_block($op='list', $delta=0, $edit=array()) {
     // Since the first block is the only one that allows configuration, we
     // need to check $delta to make sure we only save it.
     if ($delta == 0) {
-      // Have Drupal save the string to the database.
-      variable_set('cmis_target_document', $edit['cmis_target_document']);
-      variable_set('cmis_target_document_2', $edit['cmis_target_document_2']);
-      variable_set('cmis_target_document_3', $edit['cmis_target_document_3']);
+      $cmis_block_items = $edit['cmis_target_document_items'];
+      
+      // Removing empty items
+      foreach ($cmis_block_items as $key=>$cmis_block_item) {
+      	if(empty($cmis_block_item) || $cmis_block_item=='/') {
+          unset($cmis_block_items[$key]);
+      	}
+      }
+    
+      // Have Drupal save the items to the database.
+      variable_set('cmis_target_document_items', array_values($cmis_block_items));
     }
     return;
   case 'view': 
@@ -272,12 +300,66 @@ function cmis_content_block($op='list', $delta=0, $edit=array()) {
   }
 }
 
+
+function _cmis_content_block_settings_path_form($delta, $value='/') {
+  return array(
+    '#type' => 'textfield',
+    '#title' => t('Target document path @n', array('@n' => ($delta + 1))),
+    '#default_value' => $value,
+    '#description' => t('The document path relative to the root of the repository.'),
+    '#autocomplete_path' => 'cmis/autocomplete',
+    '#size' => 60,
+    '#parents' => array('cmis_target_document_items', $delta)
+  );
+  
+  //return $form;
+}
+
+
+function cmis_block_settings_more_items_js() {
+  $delta = count($_POST['cmis_target_document_items']);
+	
+  // Build our new form element.
+  $form_element = _cmis_content_block_settings_path_form($delta);
+  drupal_alter('form', $form_element, array(), 'cmis_block_settings_more_items_js');
+
+  // Build the new form.
+  $form_state = array('submitted' => FALSE);
+  $form_build_id = $_POST['form_build_id'];
+  // Add the new element to the stored form. Without adding the element to the
+  // form, Drupal is not aware of this new elements existence and will not
+  // process it. We retreive the cached form, add the element, and resave.
+  if (!$form = form_get_cache($form_build_id, $form_state)) {
+    exit();
+  }
+  
+  $form['block_settings']['cmis_target_document_items'][] = $form_element;
+  form_set_cache($form_build_id, $form, $form_state);
+  $form += array(
+    '#post' => $_POST,
+    '#programmed' => FALSE,
+  );
+
+  // Rebuild the form.
+  $form = form_builder('block-admin-configure', $form, $form_state);
+
+  // Render the new output.
+  $items_form = $form['block_settings']['cmis_target_document_items'];
+  unset($items_form['#prefix'], $items_form['#suffix']); // Prevent duplicate wrappers.
+  //$choice_form[$delta]['#attributes']['class'] = empty($choice_form[$delta]['#attributes']['class']) ? 'ahah-new-content' : $choice_form[$delta]['#attributes']['class'] .' ahah-new-content';
+  //$choice_form[$delta]['chvotes']['#value'] = 0;
+  $output = theme('status_messages') . drupal_render($items_form);
+
+  drupal_json(array('status' => TRUE, 'data' => $output));
+}
+
+
 /**
  * Generate CMIS document list view.
  * It displays document icon, name, download link, description, size, last modification date, 
  * modifier and thumbnail if any.
  */
-function cmis_content_generate_doc_view($target_path){
+function cmis_content_generate_doc_view($target_path) {
   // Try to get the node id
   module_load_include('api.inc', 'cmis');
 
@@ -290,14 +372,14 @@ function cmis_content_generate_doc_view($target_path){
   $updatedStr = date_format($cmis_object->updated, 'n/j/Y g:i A');
   $contents = '';
   if ($cmis_object->type == 'folder') {
-    $folderlink = l($cmis_object->title, 'cmis/browser', array('query'=>array('id'=>$cmis_object->id)));
+    $folderlink = l($cmis_object->title, 'cmis/browser', array('query' => array('id' => $cmis_object->id)));
     $contents .= '<div>'.$folder_img.$folderlink.'</div>';
     $contents .= '<div>'.$cmis_object->summary.'</div>';
     $contents .= '<div> Modified:'.$updatedStr.'</div>';
     $contents .= '<div> Modifier:'.$cmis_object->author.'</div>';
   }
   else {
-    $documentLink = l($cmis_object->title, 'cmis/get',array('query'=>array('id'=>$cmis_object->id)));
+    $documentLink = l($cmis_object->title, 'cmis/get', array('query' => array('id' => $cmis_object->id)));
     
     $contents .= '<div>'.$file_img.$documentLink.'</div>';
     $contents .= '<div>'.$cmis_object->summary.'</div>';
@@ -312,25 +394,16 @@ function cmis_content_generate_doc_view($target_path){
 /**
  * Display CMIS document list based on the path configurations.
  */
-function cmis_content_contents($which_block){
-  switch ($which_block){
+function cmis_content_contents($which_block) {
+  switch ($which_block) {
     case 1:
-      $target_path = variable_get('cmis_target_document', '/');
-      $content = '';
-      $content .= cmis_content_generate_doc_view($target_path);
-      
-      $target_path_2 = variable_get('cmis_target_document_2', '/');
-      if ($target_path_2 != '/') {
-        $content .= '<br/>';
-        $content .= cmis_content_generate_doc_view($target_path_2);
-      } 
-          
-      $target_path_3 = variable_get('cmis_target_document_3', '/');
-      if ($target_path_3 != '/') {
-        $content .= '<br/>';
-        $content .= cmis_content_generate_doc_view($target_path_3);
+      $content = array();
+      foreach(variable_get('cmis_target_document_items', array()) as $item) {
+      	if($item!='/') {
+      	  $content[] = cmis_content_generate_doc_view($item);
+      	}
       }
-     return $content;
+      return implode('<br />', $content);
   case 2:
     // It is possible that your block will not have any content, since it is
     // probably dynamically constructed. In this case, Drupal will not display
@@ -338,3 +411,5 @@ function cmis_content_contents($which_block){
     return;
   }
 }
+
+?>

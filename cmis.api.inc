@@ -5,23 +5,25 @@
  * @file
  * CMIS 0.5 client implementation
  * 
- * @todo: Document all CMIS calls
+ * @todo 
+ *   Document all CMIS calls
+ *   Update methods signatures to match CMIS specs
  */
 
 /*
- * Repository servicies
+ * Repository services
  */
 
 function cmisapi_getRepositories($endpoint_service) {
-  return cmis_vendor_invoke('getRepositories');
+  return cmis_vendor_invoke('getRepositories', $endpoint_service);
 }
 
 function cmisapi_getRepositoryInfo() {
   return cmis_vendor_invoke('getRepositoryInfo');
 }
 
-function cmisapi_getTypes($repositoryId) {
-  return cmis_vendor_invoke('getTypes', $repositoryId);
+function cmisapi_getTypes($repositoryId, $typeId = NULL) {
+  return cmis_vendor_invoke('getTypes', $repositoryId, $typeId);
 }
 
 function cmisapi_getTypeDefinition($repositoryId, $typeId) {
@@ -56,7 +58,7 @@ function cmisapi_getCheckedoutDocuments($repositoryId, $folderId) {
  * Object services
  */
 
-function cmisapi_createDocument($repositoryId, $typeId, $properties, $folderId = null, $content = null, $versioningState = null) {
+function cmisapi_createDocument($repositoryId, $typeId, $properties, $folderId = NULL, $content = NULL, $versioningState = NULL) {
   return cmis_vendor_invoke('createDocument', $repositoryId, $typeId, $properties, $folderId, $content, $versioningState);
 }
 
@@ -72,7 +74,7 @@ function cmisapi_createPolicy($repositoryId, $typeId, $properties, $folderId) {
   return cmis_vendor_invoke('createPolicy', $repositoryId, $typeId, $properties, $folderId);
 }
 
-function cmisapi_getAllowableActions($repositoryId, $objectId, $asUser = null) {
+function cmisapi_getAllowableActions($repositoryId, $objectId, $asUser = NULL) {
   return cmis_vendor_invoke('getAllowableActions', $repositoryId, $objectId, $asUser);
 }
 
@@ -84,11 +86,11 @@ function cmisapi_getContentStream($repositoryId, $objectId) {
   return cmis_vendor_invoke('getContentStream', $respositoryId, $objectId);
 }
 
-function cmisapi_updateProperties($repositoryId, $objectId, $changeToken = null, $propertyCollection = array ()) {
+function cmisapi_updateProperties($repositoryId, $objectId, $changeToken = NULL, $propertyCollection = array()) {
   return cmis_vendor_invoke('updateProperties', $repositoryId, $objectId, $changeToken, $propertyCollection);
 }
 
-function cmisapi_moveObject($repositoryId, $objectId, $targetFolderId, $sourceFolderId = null) {
+function cmisapi_moveObject($repositoryId, $objectId, $targetFolderId, $sourceFolderId = NULL) {
   return cmis_vendor_invoke('moveObject', $repositoryId, $objectId, $targetFolderId, $sourceFolderId);
 }
 
@@ -100,7 +102,7 @@ function cmisapi_deteleTree($repositoryId, $folderId, $unfileNonfolderObjects) {
   return cmis_vendor_invoke('deleteTree', $repositoryId, $folderId, $unfileNonfolderObjects);
 }
 
-function cmisapi_setContentStream($repositoryId, $objectId, $overwriteFlag = True, $content = null, $properties = array ()) {
+function cmisapi_setContentStream($repositoryId, $objectId, $overwriteFlag = TRUE, $content = NULL, $properties = array()) {
   return cmis_vendor_invoke('setContentStream', $repositoryId, $objectId, $overwriteFlag, $content, $properties);
 }
 
@@ -116,7 +118,7 @@ function cmisapi_addObjectToFolder($repositoryId, $objectId, $folderId) {
   return cmis_vendor_invoke('addObjectToFolder', $repositoryId, $objectId, $folderId);
 }
 
-function cmisapi_removeObjectFromFolder($repositoryId, $objectId, $folderId = null) {
+function cmisapi_removeObjectFromFolder($repositoryId, $objectId, $folderId = NULL) {
   return cmis_vendor_invoke('removeObjectFromFolder', $repositoryId, $objectId, $folderId);
 }
 
@@ -124,7 +126,7 @@ function cmisapi_removeObjectFromFolder($repositoryId, $objectId, $folderId = nu
  * Discovery servicies 
  */
 
-function cmisapi_query($repositoryId, $statement, $searchAllVersions = False, $includeAllAllowableActions = False, $includeRelationships = null, $maxItems = 0, $skipCount = 0) {
+function cmisapi_query($repositoryId, $statement, $searchAllVersions = FALSE, $includeAllAllowableActions = FALSE, $includeRelationships = NULL, $maxItems = 0, $skipCount = 0) {
   return cmis_vendor_invoke('query', $repositoryId, $statement, $searchAllVersions, $includeAllAllowableActions, $includeRelationships, $maxItems, $skipCount);
 }
 
@@ -140,7 +142,7 @@ function cmisapi_cancelCheckOut($repositoryId, $documentId) {
   return cmis_vendor_invoke('cancelCheckOut', $repositoryId, $objectId);
 }
 
-function cmisapi_checkIn($repositoryId, $documentId, $major = null, $bag = null, $content = null, $checkinComment = null) {
+function cmisapi_checkIn($repositoryId, $documentId, $major = NULL, $bag = NULL, $content = NULL, $checkinComment = NULL) {
   return cmis_vendor_invoke('checkIn', $repositoryId, $documentId, $major, $bag, $content, $checkinComment);
 }
 
@@ -179,4 +181,3 @@ function cmisapi_removePolicy($repositoryId, $policyId, $objectId) {
 function cmisapi_getAppliedPolicies($repositoryId, $objectId) {
   return cmis_vendor_invoke('getAppliedPolicies', $repositoryId, $objectId);
 }
-?>

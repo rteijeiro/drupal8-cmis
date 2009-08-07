@@ -23,10 +23,9 @@ function cmis_get_vendors() {
  * @return mixed
  */
 function cmis_vendor_invoke() {
-  $vendor = variable_get('cmis_vendor', null);
+  $vendor = variable_get('cmis_vendor', NULL);
   if (is_null($vendor)) {
-    watchdog('cmis_vendor_invoke', "cmis module not configured", null, WATCHDOG_ERROR);
-    return;
+    throw new CMISException(t('CMIS module not configured'));
   }
 
   $args = func_get_args();
@@ -35,19 +34,18 @@ function cmis_vendor_invoke() {
   $vendors = cmis_get_vendors();
   if (array_key_exists($vendor, $vendors)) {
     unset($args[0]);
-    $function = $vendor . '_cmisapi_' . $cmis_method;
+    $function = $vendor .'_cmisapi_'. $cmis_method;
     if (function_exists($function)) {
       return call_user_func_array($function, $args);
     }
-    watchdog('cmis_vendor_invoke', "$function not implemented", null, WATCHDOG_ERROR);
-    return;
+    throw new CMISException(t('@function not implemented by @vendor CMIS vendor', array('@function' => $function, '@vendor' => $vendor)));
   }
-  watchdog('cmis_vendor_invoke', "Unknown vendor: $vendor", null, WATCHDOG_ERROR);
-  return;
+  throw new CMISException(t('Unknown CMIS vendor: @vendor', array('@vendor' => $vendor)));
 }
 
 /**
  * Implementation of hook_menu() for CMIS module.
+ * 
  */
 function cmis_menu() {
   $items = array();
@@ -74,6 +72,7 @@ function cmis_menu() {
 
 /**
  * Prepare and generate entry form for CMIS settings.
+ * 
  */
 function cmis_admin_settings() {
   $vendors = array('None');
@@ -92,7 +91,7 @@ function cmis_admin_settings() {
   $form['cmis_settings']['cmis_vendor'] = array(
     '#type' => 'select',
     '#title' => t('Vendors'), 
-    '#default_value' => variable_get('cmis_vendor', null), 
+    '#default_value' => variable_get('cmis_vendor', NULL), 
     '#options' => $vendors, '#description' => t('Select the CMIS vendor'),
   );
 
@@ -100,7 +99,8 @@ function cmis_admin_settings() {
 }
 
 /**
- * Validate Setting inputs for CMIS
+ * Validate Setting inputs for CMIS.
+ * 
  */
 function cmis_admin_settings_validate($form, & $form_state) {
   // vendor is required
@@ -112,6 +112,7 @@ function cmis_admin_settings_validate($form, & $form_state) {
 
 /**
  * Return permissions for the CMIS module.
+ * 
  */
 function cmis_perm() {
   $perms = array(
@@ -122,35 +123,82 @@ function cmis_perm() {
 }
 
 /**
- * Utitily function for supporting CMIS repository path auto-complete.
+ * Utility function for supporting CMIS repository path auto-complete.
+ * 
  */
 function cmis_path_autocomplete() {
   module_load_include('api.inc', 'cmis');
 
   $args = func_get_args();
-  $path = '/' . implode('/', array_slice($args, 0, sizeof($args) - 1));
+  $path = '/'. implode('/', array_slice($args, 0, sizeof($args) - 1));
   $key = end($args);
-
   $matches = array();
-  $repository = cmisapi_getRepositoryInfo();
+  
+  try {
+    $repository = cmisapi_getRepositoryInfo();
 
-  if ($path == '/') {
-    $folderId_parts = explode('/', $repository->rootFolderId);
-    $path = '/' . end($folderId_parts);
+    if ($path == '/') {
+      $folderId_parts = explode('/', $repository->rootFolderId);
+      $path = '/'. urldecode(end($folderId_parts));
 
-    $matches[$path] = $path;
-    print drupal_to_js($matches);
-    return;
+      $matches[$path] = $path;
+      return drupal_json($matches);
+    }
+
+    $folder_object = cmisapi_getProperties($repository->repositoryId, drupal_urlencode($path));
+    $matches = array();
+    foreach (array('folder', 'document') as $cmis_base_type) {
+      try {
+        $cmis_objects = cmisapi_query($repository->repositoryId, "SELECT * FROM $cmis_base_type WHERE Name like '%$key%' AND IN_FOLDER('$folder_object->id')");
+      }
+      catch (CMISException $e){
+        cmis_error_handler('cmis_path_autocomplete', $e);
+        continue;
+      }
+    
+      foreach ($cmis_objects as $cmis_object) {
+        $matches[$path .'/'. $cmis_object->title . ($cmis_base_type == 'folder' ? '/' : '')] = $cmis_object->title;
+      }
+    }
+
+    drupal_json($matches);
   }
+  catch (CMISException $e) {
+    cmis_error_handler('cmis_path_autocomplete', $e);
+    return drupal_json(array());
+  }
+}
 
-  $folderObject = cmisapi_getProperties($repository->repositoryId, drupal_urlencode($path));
+/**
+ * CMIS Exception class.
+ *  
+ */
+class CMISException extends Exception {
+  
+}
 
-  foreach (array('folder', 'document') as $cmis_base_type) {
-    $cmis_objects = cmisapi_query($repository->repositoryId, "SELECT * FROM $cmis_base_type WHERE ".($key!='*'?"Name like '%$key%' AND":"")." IN_FOLDER('$folderObject->id')");
-    foreach ($cmis_objects as $cmis_object) {
-      $matches[$path . '/' . $cmis_object->title . ($cmis_base_type == 'folder' ? '/' : '')] = $cmis_object->title;
+/**
+ * Utility for handling CMIS errors. 
+ * 
+ * @param $e Exception
+ */
+function cmis_error_handler($type, $e) {
+  watchdog($type, $e->getMessage(), NULL, WATCHDOG_ERROR);
+  drupal_set_message($e->getMessage(), 'error');
+}
+
+/**
+ * Returns supported CMIS version
+ * 
+ * @return string
+ */
+function cmis_version_supported() {
+  $repository = cmisapi_getRepositoryInfo();
+  foreach(array('cmisVersionSupported', 'cmisVersionsSupported') as $property_name) {
+    if(isset($repository->$property_name)) {
+      return (string)$repository->$property_name; 
     }
   }
-
-  print drupal_to_js($matches);
+  
+  throw new CMISException('Unable to determine CMIS supported version');
 }

@@ -2,26 +2,111 @@
 // $Id$
 
 /**
+ * Implementation of hook_menu().
  * 
  */
-
-/**
- * Implementation of hook_menu() for CMIS browser module.
- */
 function cmis_browser_menu() {
-  $items = array ();
-  $items['cmis/browser'] = array (
+  $items = array();
+  $items['cmis/browser'] = array(
     'type' => MENU_NORMAL_ITEM,
     'title' => t('CMIS Repository'),
     'page callback' => 'cmis_browser_browse', 
     'access callback' => 'user_access', 
-    'access arguments' => array ('access cmis'),
+    'access arguments' => array('access cmis'),
   );
   return $items;
 }
 
 /**
- * Build form for browsing CMIS respository.
+ * Register custom themes for cmis_browser module.
+ * 
+ */
+function cmis_browser_theme() {
+  return array(
+    'cmis_browser_browse_form' => array(
+      'arguments' => array('form' => NULL),
+      'file' => 'cmis_browser.theme.inc'
+    ),
+    'cmis_browser_browse_children' => array(
+      'arguments' => array('context' => NULL),
+      'file' => 'cmis_browser.theme.inc'
+    ),
+    'cmis_browser_browse_breadcrumb' => array(
+      'arguments' => array('bcarray' => NULL),
+      'file' => 'cmis_browser.theme.inc'
+    )
+  );
+}
+
+/**
+ * Build cmis_browser browse page.
+ * 
+ */
+function cmis_browser_browse() {
+  module_load_include('api.inc', 'cmis');
+
+  // Invoke CMIS service
+  try {
+    $repository = cmisapi_getRepositoryInfo();
+  }
+  catch (CMISException $e) {
+    cmis_error_handler('cmis_browser', $e);
+    return '';
+  }
+  
+  // Folder lookup 
+  $folder_id = NULL;
+  $folder_parents = array();
+  $bcarray = array_slice(explode('/', $_GET['q']), 2);
+  
+  if (isset($_GET['id'])) {
+    $folder_id = urldecode($_GET['id']);
+    try {
+      $folder_parents = cmisapi_getObjectParents($repository->repositoryId, $folder_id);
+    }
+    catch (CMISException $e) {
+      cmis_error_handler('cmis_browser', $e);
+      return '';
+    }
+  }
+  else {
+    if (!empty($bcarray)) {
+      $path = '/'. implode('/', $bcarray);
+      $folder_id = drupal_urlencode($path);
+    }
+    else {
+      $folder_id = variable_get('cmis_browser_folder', NULL);
+      if (is_null($folder_id)) {
+        // Unable to lookup requested folder. displaying repository root folder
+        $folder_title = end(explode('/', $repository->rootFolderId));
+        $bcarray = array($folder_title);
+        $folder_id = '/'. $folder_title;
+      }
+    }
+  }
+  
+  // Children lookup 
+  try {
+    $children = cmisapi_getChildren($repository->repositoryId, $folder_id);
+  }
+  catch (CMISException $e) {
+    cmis_error_handler('cmis_browser', $e);
+    return '';
+  }
+
+  // Render output
+  drupal_add_css(drupal_get_path('module', 'cmis_browser') .'/cmis_browser.css');
+  $contents = drupal_get_form('cmis_browser_browse_form');
+  $contents .= theme('cmis_browser_browse_breadcrumb', $bcarray);
+  $contents .= theme('cmis_browser_browse_children', array(
+    'children' => $children, 'bcarray' => $bcarray, 'id'=>$_GET['id'], 'folder_parents' => $folder_parents
+  ));
+  
+  return $contents;
+}
+
+/**
+ * Implementation of hook_form().
  */
 function cmis_browser_browse_form($form_state) {
   $parts = explode('/', $_GET['q']);
@@ -29,12 +114,14 @@ function cmis_browser_browse_form($form_state) {
 
   $form['#theme'] = 'cmis_browser_browse_form';
 
-  $form['browse']['path'] = array (
+  $form['browse']['path'] = array(
     '#type' => 'textfield',
     '#title' => t('Path'), 
-    '#default_value' => '/' .  $path, '#autocomplete_path' => 'cmis/autocomplete', '#size' => 50);
+    '#default_value' => '/'.  $path, 
+    '#autocomplete_path' => 'cmis/autocomplete', 
+    '#size' => 50);
 
-  $form['browse']['submit'] = array (
+  $form['browse']['submit'] = array(
     '#type' => 'submit',
     '#name' => 'browse',
     '#default_value' => 'Browse',
@@ -44,138 +131,14 @@ function cmis_browser_browse_form($form_state) {
 }
 
 /**
- * Handle CMIS repository browse form submission.
+ * Implementation of hook_form_submit().
+ * 
  */
 function cmis_browser_browse_form_submit($form, & $form_state) {
   $path = $form_state['values']['path'];
   $submit2 = $form_state['values']['browse'];
-  unset ($form_state['storage']);
+  unset($form_state['storage']);
   if ('Browse' == $submit2) {
-    $form_state['redirect'] = 'cmis/browser' . $path;
+    $form_state['redirect'] = 'cmis/browser'. $path;
   }
-}
-
-/**
- * Custom theme for CMIS repository browse form.
- */
-function theme_cmis_browser_browse_form($form) {
-  $rows = array (
-    array (drupal_render($form['browse']['path']), drupal_render($form['browse']['submit'])),
-  );
-
-  $header = array ('', '');
-  $output = theme('table', $header, $rows);
-  $output .= drupal_render($form);
-  return $output;
-}
-
-/**
- * Register custom themes for CMIS browser module.
- */
-function cmis_browser_theme() {
-  return array (
-    'cmis_browser_browse_form' => array (
-      'arguments' => array ('form' => NULL),
-    ),
-  );
-}
-
-/**
- * Build CMIS repository browse page.
- */
-function cmis_browser_browse() {
-  module_load_include('api.inc', 'cmis');
-  drupal_add_css(drupal_get_path('module', 'cmis_browser') . '/cmis_browser.css');
-  $contents = '';
-  $contents .= drupal_get_form('cmis_browser_browse_form');
-
-  // Get the repo space path from request
-  $folder_img = theme('image', drupal_get_path('module', 'cmis_browser') . '/images/space.gif');
-  $file_img = theme('image', drupal_get_path('module', 'cmis_browser') . '/images/file.png');
-  $next_img = theme('image', drupal_get_path('module', 'cmis_browser') . '/images/next.gif');
-
-  $parts = explode('/', $_GET['q']);
-  $path = implode('/', array_slice($parts, 2));
-  if ($path) {
-    $path = '/' . $path;
-  }
-
-  $contents .= '<div id="cmis-breadcrumb">';
-
-  // Generate Breadcrumb
-  $currentpath = '';
-  $bcarray = array_slice($parts, 2);
-
-  foreach ($bcarray as $space) {
-    $currentpath .= '/' . $space;
-    $pagelink = l($space, 'cmis/browser' . $currentpath);
-    $contents .= $pagelink;
-
-    if ($space != end($bcarray)) {
-      $contents .= $next_img . ' ';
-    }
-  }
-
-  $contents .= '</div>';
-
-  // Invoke CMIS service
-  $repository = cmisapi_getRepositoryInfo();
-  $folderObject = null;
-  if (isset ($_GET['id'])) {
-    $folderObject = cmisapi_getProperties($repository->repositoryId, urldecode($_GET['id']));
-  }
-  elseif ($path) { 
-    $folderObject = cmisapi_getProperties($repository->repositoryId, drupal_urlencode($path));
-  }
-  else {
-    $folderId_parts = explode('/', $repository->rootFolderId);
-    $path = '/' . $folderId_parts[sizeof($folderId_parts) - 1];
-    $folderObject = cmisapi_getProperties($repository->repositoryId, $path);
-  }
-
-  $children = cmisapi_getChildren($repository->repositoryId, $folderObject->id);
-
-  if (false === $children) {
-    $contents = 'Unable to communicate with repository.';
-  } 
-  else {
-    $header = array (t('name'), t('type'), t('size'), t('author'), t('last modified'));
-
-    $folder_img = theme('image', drupal_get_path('module', 'cmis_browser') . '/images/space.gif');
-    $file_img = theme('image', drupal_get_path('module', 'cmis_browser') . '/images/file.png');
-
-    if (isset ($_GET['id'])) {
-      if ($folderParents = cmisapi_getObjectParents($repository->repositoryId, $folderObject->id)) {
-        $folderParentObject = end($folderParents);
-        $folderParentObject->title = '..';
-        $children = array_merge(array($folderParentObject), $children);
-      }
-    }
-    foreach ($children as $child) {
-      $summary = $child->summary;
-      $type = $child->type;
-      $updated = date_create($entry->updated);
-      $updatedStr = date_format($updated, 'n/j/Y g:i A');
-
-      if ($type == 'folder') {
-        if (isset ($_GET['id'])) {
-          $folderlink = l($child->title, 'cmis/browser', array ('query' => array ('id' => $child->id)));
-        } 
-        else {
-          $folderlink = l($child->title, 'cmis/browser' . $path . '/' . $child->title);
-        }
-        $rows[] = array ($folder_img . ' ' . $folderlink, 'Space', '', $child->author, $updatedStr);
-      } 
-      else {
-        $size = $child->size;
-        $docType = $child->contentMimeType;
-        $icon = $child->icon;
-        $documentLink = l($child->title, 'cmis/get', array ('query' => array ('id' => $child->id)));
-        $rows[] = array ($file_img . $documentLink, $docType, number_format($size / 1000, 2, '.', ',') . ' K', $child->author, $updatedStr);
-      }
-    }
-    $contents .= theme('table', $header, $rows);
-  }
-
-  return $contents;
 }

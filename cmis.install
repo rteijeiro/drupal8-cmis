@@ -1,8 +1,9 @@
 <?php
 // $Id$
+
 /**
  * Implementation of hook_uninstall().
  */
-function cmis_uninstall(){
+function cmis_uninstall() {
   variable_del('cmis_vendor');
 }

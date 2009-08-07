@@ -4,12 +4,12 @@
 /**
  * Implementation of hook_install()
  */
-function cmis_browser_install(){
+function cmis_browser_install() {
   return;
 }
 /**
  * Implementation of hook_uninstall()
  */
-function cmis_browser_uninstall(){
+function cmis_browser_uninstall() {
   return;
 }

@@ -23,7 +23,7 @@ function theme_cmis_query_pager($query, $p) {
   $prev_p = $p-1;
       
   $contents .= '<div class="pagination">';
-  if($p!=1) {
+  if ($p!=1) {
     $contents .= l(t('Prev'), $base_search_url . $prev_p);
   } 
         

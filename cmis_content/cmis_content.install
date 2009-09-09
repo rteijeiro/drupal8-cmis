@@ -1,6 +1,0 @@
-<?php 
-// $Id$
-
-function cmis_content_uninstall() {
-  variable_del('cmis_target_document_items');
-}

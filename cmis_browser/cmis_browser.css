@@ -1,1 +1,8 @@
 /* $Id$ */
+TABLE.cmis_browser_browse_children li {
+	list-style: none; 
+	display: inline; 
+	list-style-position: outside; 
+	background: none !important;
+	padding: 0;
+}

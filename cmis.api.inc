@@ -46,8 +46,8 @@ function cmisapi_getFolderParent($repositoryId, $folderId) {
   return cmis_vendor_invoke('getFolderParent', $repositoryId, $folderId);
 }
 
-function cmisapi_getObjectParents($repositoryId, $objectId) {
-  return cmis_vendor_invoke('getObjectParents', $repositoryId, $objectId);
+function cmisapi_getObjectParents($repositoryId, $objectId, $filter = NULL, $includeAllowableActions = NULL, $includeRelationships = NULL) {
+  return cmis_vendor_invoke('getObjectParents', $repositoryId, $objectId, $filter, $includeAllowableActions, $includeRelationships);
 }
 
 function cmisapi_getCheckedoutDocuments($repositoryId, $folderId) {

@@ -38,8 +38,8 @@ function cmisapi_getDescendants($repositoryId, $folderId) {
   return cmis_vendor_invoke('getDescendants', $repositoryId, $folderId);
 }
 
-function cmisapi_getChildren($repositoryId, $folderId) {
-  return cmis_vendor_invoke('getChildren', $repositoryId, $folderId);
+function cmisapi_getChildren($repositoryId, $folderId, $type = NULL, $filter = NULL, $includeAllowableActions = NULL, $includeRelationships = NULL, $maxItems = NULL, $skipCount = NULL, $orderBy = NULL) {
+  return cmis_vendor_invoke('getChildren', $repositoryId, $folderId, $type, $filter, $includeAllowableActions, $includeRelationships, $maxItems, $skipCount, $orderBy);
 }
 
 function cmisapi_getFolderParent($repositoryId, $folderId) {

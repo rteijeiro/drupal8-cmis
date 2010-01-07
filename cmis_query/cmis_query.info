@@ -1,8 +1,4 @@
-<<<<<<< cmis_query.info
 ; $Id$
-=======
-; $Id$
->>>>>>> 1.2.2.1.2.1
 name = CMIS Query
 description = Allows users to run CMIS queries against a CMIS repository.
 package = CMIS

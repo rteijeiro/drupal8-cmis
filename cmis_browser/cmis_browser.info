@@ -1,8 +1,4 @@
-<<<<<<< cmis_browser.info
 ; $Id$
-=======
-; $Id$
->>>>>>> 1.2.2.2.2.1
 name = CMIS Browser
 description = Allows users to browse the a CMIS repository tree.
 package = CMIS

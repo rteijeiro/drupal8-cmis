@@ -1,92 +1,7 @@
 <?php
-<<<<<<< cmis_sync.module
 // $Id$
 
 /**
- * Implementation of hook_menu() for CMIS sync module.
- * 
- */
-function cmis_sync_menu() {    
-  foreach (node_get_types() as $type) {
-    $type_name = $type->type;
-    $items['admin/settings/cmis/sync/'. $type_name] = array(
-      'title' => 'Sync '. $type_name,
-      'page callback' => 'drupal_get_form',
-      'page arguments' => array('cmis_sync_admin_form', $type_name),
-      'access arguments' => array('administer cmis'),
-      'file' => 'cmis_sync.admin.inc',
-      'type' => MENU_NORMAL_ITEM,
-      'weight' => 1,
-    );
-  }
-  
-  return $items;
-}
-=======
-// $Id$
->>>>>>> 1.1.4.5.2.1
-
-/**
-<<<<<<< cmis_sync.module
-*Implementation of hook_nodeapi
-*
-*/
-function cmis_sync_nodeapi(& $node, $op, $teaser, $page) {
-  $cmis_object = _cmis_sync_drupal_to_cmis_prepare($node);
-  
-  if ($cmis_object && !isset($node->cmis_sync_disabled)) {
-    module_load_include('api.inc', 'cmis');
-
-    switch ($op) {
-      // Node created
-      case 'insert' :
-        try {
-          $repository = cmisapi_getRepositoryInfo();
-          
-          // Destination folder properties. Each Drupal node content type has it own synchronization folder. 
-          $cmis_parent = cmisapi_getProperties($repository->repositoryId, $cmis_object->parentId);
-  
-          // Creating a new document
-          $cmis_objectId = cmisapi_createDocument($repository->repositoryId, $cmis_object->type, $cmis_object->properties, $cmis_parent->id, $cmis_object->content);
-          
-          // Updating CMIS reference object properties
-          cmisapi_updateProperties($repository->repositoryId, $cmis_objectId, NULL, $cmis_object->properties); 
-        }
-        catch (CMISException $e) {
-          cmis_error_handler('cmis_sync_nodeapi', $e);
-          return;
-        }
-        
-        // Saving CMIS reference id in {cmis_sync_node} table
-        db_query('INSERT INTO {cmis_sync_node} (nid, cmis_objectId, changed_timestamp) VALUES (%d, \'%s\', %d)', $node->nid, $cmis_objectId, $_SERVER['REQUEST_TIME']);
-        break;
-
-      // Node updated 
-      case 'update' :
-        // Send updates only if the current node has a CMIS reference id.
-        if ($cmis_objectId = db_result(db_query('SELECT cmis_objectId FROM {cmis_sync_node} WHERE nid = %d', $node->nid))) {
-          try {
-            $repository = cmisapi_getRepositoryInfo();
-          
-            // Updating CMIS reference object content
-            cmisapi_setContentStream($repository->repositoryId, $cmis_objectId, TRUE, $cmis_object->content, $cmis_object->properties);
-
-            // Updating CMIS reference object properties
-            cmisapi_updateProperties($repository->repositoryId, $cmis_objectId, NULL, $cmis_object->properties);
-          }
-          catch (CMISException $e) {
-            cmis_error_handler('cmis_sync_nodeapi', $e);
-            return;
-          }
-          
-          // Update changed timestamp 
-          db_query('UPDATE {cmis_sync_node} SET changed_timestamp=%d WHERE nid = %d', $_SERVER['REQUEST_TIME'], $node->nid);
-        }
-        break;
-    }
-  }
-}
-=======
  * Config sample:
  *
  * $conf['cmis_sync_map'] = array(
@@ -102,61 +17,7 @@ function cmis_sync_nodeapi(& $node, $op, $teaser, $page) {
  *   )
  *  );
  */
->>>>>>> 1.1.4.5.2.1
 
-<<<<<<< cmis_sync.module
-/**
- * Implementation of hook_cron
- *  
- * @todo 
- *  Synchronize individual node as well. Maybe exporting a hook, might allow other modules to implement their own sync logic.  
- *  Handle SQL injection for CMIS query calls. Low priority.   
- *  
- */
-function cmis_sync_cron() {
-  module_load_include('api.inc', 'cmis');
-  module_load_include('inc', 'node', 'node.pages');
-
-  try {
-    $repository = cmisapi_getRepositoryInfo();
-  }
-  catch (CMISException $e) {
-    cmis_error_handler('cmis_sync_cron', $e);
-    return;
-  }
-
-  $sync_map = variable_get('cmis_sync_map', array());
-  $sync_map_changed = FALSE;
-  foreach ($sync_map as $node_type => $sync_map_type) {
-    // Check if sync is enabled for this Drupal content type 
-    if (!array_key_exists('enabled',  $sync_map_type) || !$sync_map_type['enabled']) {
-      continue;
-    }
-    
-    try {
-      // Handle CMIS updates
-      _cmis_sync_cmis_to_drupal_handle_updates($repository, $sync_map_type, $node_type);
-      
-      // Handle CMIS deletes
-      if ($sync_map_type['deletes']) {
-        _cmis_sync_cmis_to_drupal_handle_deletes($repository, $sync_map_type, $node_type);
-      }
-      
-      // Update CMIS sync setting
-      if ($sync_map_type['full_sync_next_cron']) {
-        $sync_map[$node_type]['full_sync_next_cron'] = 0;
-        $sync_map_changed = TRUE;
-      }
-    }
-    catch (CMISException $e) {
-      cmis_error_handler('cmis_sync_cron', $e);  
-    }
-  }
-
-  // Save CMIS sync settings
-  if ($sync_map_changed)  {
-    variable_set('cmis_sync_map', $sync_map);
-=======
 /**
  * Implementation of hook_menu() for CMIS sync module.
  */
@@ -172,104 +33,14 @@ function cmis_sync_menu() {
       'type' => MENU_NORMAL_ITEM,
       'weight' => 1,
     );
->>>>>>> 1.1.4.5.2.1
   }
   
   return $items;
 }
 
 /**
-<<<<<<< cmis_sync.module
- * Maps a drupal node to a cmis_object
- * 
- * @param $node
- * @return stdClass $cmis_object wrapper 
-=======
  * Implementation of hook_theme() for CMIS sync module.
->>>>>>> 1.1.4.5.2.1
  */
-<<<<<<< cmis_sync.module
-function _cmis_sync_drupal_to_cmis_prepare($node) {
-  $sync_map = variable_get('cmis_sync_map', array());
-
-  // Is cmis sync enabled for this node type?
-  if ($sync_map[$node->type] && $sync_map[$node->type]['enabled']) {
-    $cmis_object = new stdClass();
-    
-    // CMIS destination type
-    $cmis_object->type = $sync_map[$node->type]['cmis_type'];
-    
-    // CMIS destination folder id
-    $cmis_object->parentId = drupal_urlencode($sync_map[$node->type]['cmis_root']);
-
-    // Map Drupal node fields to cmis object properties 
-    $cmis_object->properties = array('title' => $node->title, 'content-type' => $sync_map[$node->type]['content_type']);
-    foreach ($sync_map[$node->type]['fields'] as $drupal_field => $cmis_field) {
-      $cmis_object->properties[$cmis_field] = $node->$drupal_field;
-    }
-
-    // Map specified Drupal node field as object's content
-    $cmis_object->content = $node->$sync_map[$node->type]['content_field']; 
-    if (is_array($cmis_object->content)) {
-      $cmis_object->content = $cmis_object->content[0]['value'];
-    }
-    
-    return $cmis_object;
-  }
-  
-  return FALSE;
-}
-
-/**
- * Maps a cmis_object to a drupal node.
- *   
- * @param $cmis_repository 
- * @param $sync_map_type Sync rules for current type
- * @param $cmis_object
- * @return $drupal_node
- * 
- * @todo 
- *  Add workflow properties
- */
-function _cmis_sync_cmis_to_drupal_prepare($repository, $sync_map_type, $node_type, $cmis_object) {
-  module_load_include('api.inc', 'cmis');
-  
-  if ($sync_map_type['enabled'] && $cmis_object->contentMimeType==$sync_map_type['content_type']) {
-    $drupal_nid = NULL;
-    
-    // Identify Drupal nid
-    if (!array_key_exists('nid', $sync_map_type['fields'])) { 
-      if ($cmis_sync_node = db_fetch_object(db_query('SELECT nid FROM {cmis_sync_node} WHERE cmis_objectId = \'%s\'', $cmis_object->id))) {
-        $drupal_nid = $cmis_sync_node->nid;  
-      }
-    }
-    else {
-      $drupal_nid = $cmis_object->properties[$sync_map_type['fields']['nid']];
-    }
-    
-    // Load Drupal node
-    $node = node_load($drupal_nid);
-    $node->type = $node_type;
-    
-    // Map cmis properties to drupal node fields    
-    foreach ($sync_map_type['fields'] as $node_field => $cmis_field) {
-      $node->$node_field = $cmis_object->properties[$cmis_field];
-    }
-    
-    // Load content field
-    $node->$sync_map_type['content_field'] = cmisapi_getContentStream($repository->repositoryId, $cmis_object->id);
-    
-    // Fixing CCK fields
-    $node_type_info = content_types($node_type); 
-    foreach ($node_type_info['fields'] as $field_name => $field_info) { 
-      $node->$field_name = array(array('value' => $node->$field_name));
-    }
-    
-    return $node;
-  }
-  
-  return FALSE;
-=======
 function cmis_sync_theme() {
   return array(
     'cmis_sync_admin_field_map_table' => array(
@@ -277,74 +48,19 @@ function cmis_sync_theme() {
       'file' => 'cmis_sync.theme.inc'
     )
   );
->>>>>>> 1.1.4.5.2.1
 }
 
 /**
-<<<<<<< cmis_sync.module
- * Creates/updates Drupal nodes with CMIS content.
- * 
- * @param $repository
- * @param $sync_map_type
- * @param $node_type
-=======
  * Implementation of hook_nodeapi() for CMIS sync module.
->>>>>>> 1.1.4.5.2.1
  */
-<<<<<<< cmis_sync.module
-function _cmis_sync_cmis_to_drupal_handle_updates($repository, $sync_map_type, $node_type) {
-  // Get CMIS object properties 
-  $cmis_folder = cmisapi_getProperties($repository->repositoryId, drupal_urlencode($sync_map_type['cmis_root']));
-
-  // Select updated objects
-  $sync_subfolders_rule = $sync_map_type['subfolders']?'IN_TREE':'IN_FOLDER';
-  $sync_full_rule =  $sync_map_type['full_sync_next_cron']?'':sprintf('AND LastModificationDate > \'%s\'', date_create('12 hour ago')->format('Y-m-d\TH:i:s.000-00:00'));
-  
-  // Grab last updates
-  $cmis_query = sprintf('SELECT * FROM %s WHERE %s(\'%s\') %s', $sync_map_type['cmis_type'], $sync_subfolders_rule, $cmis_folder->id, $sync_full_rule);
-  $cmis_updates = cmisapi_query($repository->respositoryId, $cmis_query);
-  
-  foreach ($cmis_updates as $cmis_update) { 
-    // Build/lookup Drupal node
-    $drupal_node = _cmis_sync_cmis_to_drupal_prepare($repository, $sync_map_type, $node_type, $cmis_update);
-
-    // Unable to map current CMIS object to any Drupal content type
-    if (FALSE === $drupal_node) {
-      continue;
-    }
-     
-    // Mark the Drupal node in order to bypass nodeapi cmis_sync hook
-    $drupal_node->cmis_sync_disabled = TRUE;
-    
-    // Save Drupal node
-    node_save($drupal_node);
-    
-    // Update/insert changed timestamp 
-    if (db_fetch_object(db_query('SELECT nid FROM {cmis_sync_node} WHERE cmis_objectId = \'%s\'', $cmis_update->id))) {
-      db_query('UPDATE {cmis_sync_node} SET changed_timestamp=%d, nid=%d WHERE cmis_objectId = \'%s\'', $_SERVER['REQUEST_TIME'], $drupal_node->nid, $cmis_update->id);
-      watchdog('cmis_sync_cron', 'Updated nid @nid', array('@nid' => $drupal_node->nid));
-    }
-    else {
-      db_query('INSERT INTO {cmis_sync_node} (nid, cmis_objectId, changed_timestamp) VALUES (%d, \'%s\', %d)', $drupal_node->nid, $cmis_update->id, $_SERVER['REQUEST_TIME']);
-      watchdog('cmis_sync_cron', 'Added nid @nid', array('@nid' => $drupal_node->nid));
-    }
-  }
-=======
 function cmis_sync_nodeapi(& $node, $op, $teaser, $page) {
   if (in_array($op, array('insert', 'update', 'delete'))) {
     module_load_include('drupal.inc', 'cmis_sync');
     _cmis_sync_drupal_cmis_update(array('node' => $node, 'op' => $op));
   }
->>>>>>> 1.1.4.5.2.1
 }
 
 /**
-<<<<<<< cmis_sync.module
- * Deletes Drupal nodes referencing to CMIS deleted objects. 
- * 
- * @param $repository
- * @param $sync_map_type
-=======
  * Implementation of hook_cron
  *  
  * @todo 
@@ -352,41 +68,8 @@ function cmis_sync_nodeapi(& $node, $op, $teaser, $page) {
  *  might allow other modules to implement their own sync logic.  
  *  Handle SQL injection for CMIS query calls. Low priority.   
  *  
->>>>>>> 1.1.4.5.2.1
  */
-<<<<<<< cmis_sync.module
-function _cmis_sync_cmis_to_drupal_handle_deletes($repository, $sync_map_type, $node_type) {
-  // Get node list
-  $sync_nodes = array();
-  $sync_nodes_query = db_query('SELECT nid, cmis_objectId FROM {cmis_sync_node}');
-  
-  while ($sync_node = db_fetch_object($sync_nodes_query)) {
-    if (node_load($sync_node->nid)->type == $node_type) {
-      $sync_nodes[$sync_node->cmis_objectId] = $sync_node->nid;
-    }
-  }
-
-  if (count($sync_nodes)) {
-    // Identify existing CMIS objects
-    $cmis_objects = cmisapi_query($repository, sprintf('SELECT ObjectId FROM %s WHERE ObjectId IN (\'%s\')', $sync_map_type['cmis_type'], join('\',\'', array_keys($sync_nodes))));
-    foreach ($cmis_objects as $cmis_object) {
-      if (array_key_exists($cmis_object->id, $sync_nodes)) {
-        unset($sync_nodes[$cmis_object->id]); 
-      }
-    }
-  
-    // Delete CMIS - Drupal reference
-    db_query('DELETE FROM {cmis_sync_node} WHERE nid IN (\'%s\')', join('\',\'', array_values($sync_nodes)));
-    
-    // Delete Drupal nodes
-    foreach ($sync_nodes as $cmis_objectId => $drupal_nid) {
-      node_delete($drupal_nid);
-    }
-  }
-}
-=======
 function cmis_sync_cron() {
   module_load_include('cmis.inc', 'cmis_sync');
   _cmis_sync_cmis_drupal_update();
 }
->>>>>>> 1.1.4.5.2.1

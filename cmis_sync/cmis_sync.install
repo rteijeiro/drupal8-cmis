@@ -1,9 +1,5 @@
 <?php
-<<<<<<< cmis_sync.install
 // $Id$
-=======
-// $Id$
->>>>>>> 1.1.4.4.2.1
  
 /**
  * Implementation of hook_install()

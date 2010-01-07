@@ -1,9 +1,5 @@
 <?php 
-<<<<<<< cmis_browser.install
 // $Id$
-=======
-// $Id$
->>>>>>> 1.2.2.2.2.1
 
 /**
  * Implementation of hook_install()

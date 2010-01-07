@@ -1,9 +1,5 @@
 <?php 
-<<<<<<< cmis_query.theme.inc
 // $Id$
-=======
-// $Id$
->>>>>>> 1.1.2.1.2.1
 
 /**
  * Theme function for CMIS query search results

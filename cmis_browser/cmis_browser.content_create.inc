@@ -17,9 +17,9 @@ function _cmis_browser_actions_folder_create($parent_folder_id, $folder_name) {
     return;
   }
   
-  if ($parent_folder->type == 'folder') {
+  if ($parent_folder->type == 'cmis:folder') {
     try {
-      $folder_id = cmisapi_createFolder($repository->repositoryId, 'folder', array('title' => $folder_name), $parent_folder->id);
+      $folder_id = cmisapi_createFolder($repository->repositoryId, 'cmis:folder', array('title' => $folder_name), $parent_folder->id);
       drupal_set_message(t('CMIS object @name has been created.', array('@name' => $folder_name)));
     }
     catch (CMISException $e) {
@@ -58,10 +58,10 @@ function _cmis_browser_actions_content_create($folder_id, $document_name, $docum
     return;
   }
   
-  if ($folder->type == 'folder') {
+  if ($folder->type == 'cmis:folder') {
     try {
-      $document_id = cmisapi_createDocument($repository->repositoryId, 'document', 
-        array( 'content-type' => $document_mimetype, 'title' => $document_name), 
+      $document_id = cmisapi_createDocument($repository->repositoryId, 'cmis:document', 
+        array( 'content-type' => $document_mimetype, 'title' => $document_name, 'name' => $document_name), 
         $folder->id, $document_content
       );
       
@@ -74,7 +74,7 @@ function _cmis_browser_actions_content_create($folder_id, $document_name, $docum
     }
   }
   else {
-    form_set_error('path', t('Error when locating the target space @object_id', array('@object_id' => $folder_id)));
+    form_set_error('path', t('Error while locating the target space @object_id', array('@object_id' => $folder_id)));
     return FALSE;
   }
 }

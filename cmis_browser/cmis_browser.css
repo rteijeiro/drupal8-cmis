@@ -1,3 +1,4 @@
+<<<<<<< cmis_browser.css
 /* $Id$ */
 TABLE.cmis_browser_browse_children li {
 	list-style: none; 
@@ -5,4 +6,20 @@ TABLE.cmis_browser_browse_children li {
 	list-style-position: outside; 
 	background: none !important;
 	padding: 0;
+}=======
+/* $Id$ */
+TABLE.cmis_browser_browse_children li {
+	list-style: none; 
+	display: inline; 
+	list-style-position: outside; 
+	padding: 0;
 }
+
+TABLE.cmis_browser_browse_children li a { display:inline !important; }
+
+TABLE.cmis_browser_browse_children .load_indicator { 
+  background-image: url(../../../../../misc/throbber.gif);
+  background-repeat: no-repeat;
+  background-position: 0 80%;
+  padding-left: 18px;
+}>>>>>>> 1.2.2.2.2.1

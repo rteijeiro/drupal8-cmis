@@ -37,6 +37,7 @@ function cmis_dev_info() {
     array(t('Description'),  $repository->repositoryDescription),
     array(t('Vendor'),       $repository->vendorName),
     array(t('Version'),      $repository->productVersion),
+    array(t('CMIS version'), $repository->cmisVersionSupported)
   );
   
   return theme('table', array(t('Name'), t('Properties')), $rows);

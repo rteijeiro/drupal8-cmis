@@ -21,7 +21,7 @@ function _cmis_browser_content_object_id_from_request($repository) {
       $object_id = variable_get('cmis_browser_root', NULL);
       if (is_null($object_id)) {
         // Unable to lookup requested folder. displaying repository root folder
-        drupal_goto('/cmis/browser/'. end(explode('/', $repository->rootFolderId)));
+        $object_id = (string) $repository->rootFolderId;
       }
     }
   }

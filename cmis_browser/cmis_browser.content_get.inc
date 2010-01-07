@@ -15,10 +15,10 @@ function cmis_browser_content_get() {
     $object_id = _cmis_browser_content_object_id_from_request($repository);  
     $object = cmisapi_getProperties($repository->repositoryId, $object_id);
     switch ($object->type) {
-      case 'document': 
+      case 'cmis:document': 
         return _cmis_browser_content_get_document($repository, $object);
         break;
-      case 'folder':
+      case 'cmis:folder':
         return _cmis_browser_content_get_folder($repository, $object, array_slice(explode('/', $_GET['q']), 2));
         break;
       default:
@@ -72,7 +72,12 @@ function _cmis_browser_content_get_folder($repository, $object, $bcarray = NULL)
   try {
     $children = cmisapi_getChildren($repository->repositoryId, $object->id);
     if (empty($bcarray)) {
-      $parents = cmisapi_getObjectParents($repository->repositoryId, $object->id);
+      try {
+        $parents = cmisapi_getObjectParents($repository->repositoryId, $object->id);
+      }
+      catch (CMISException $e) {
+        
+      }
     } 
   }
   catch (CMISException $e) {

@@ -1,5 +1,9 @@
 <?php
+<<<<<<< cmis.module
 // $Id$
+=======
+// $Id$
+>>>>>>> 1.3.2.1.2.1
 
 /**
  * Utility function that returns all known vendors
@@ -131,6 +135,7 @@ function cmis_error_handler($type, $e) {
   watchdog($type, $e->getMessage(), NULL, WATCHDOG_ERROR);
   drupal_set_message($e->getMessage(), 'error');
 }
+<<<<<<< cmis.module
 
 /**
  * Returns supported CMIS version
@@ -146,4 +151,5 @@ function cmis_version_supported() {
   }
   
   throw new CMISException('Unable to determine CMIS supported version');
-}
+}=======
+>>>>>>> 1.3.2.1.2.1

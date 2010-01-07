@@ -1,4 +1,8 @@
+<<<<<<< cmis_sync.info
 ; $Id$
+=======
+; $Id$
+>>>>>>> 1.1.4.4.2.1
 name = CMIS Sync
 description = Provides synchronization with other CMIS repositories 
 package = CMIS

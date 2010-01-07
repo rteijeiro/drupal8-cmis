@@ -1,4 +1,5 @@
 <?php
+<<<<<<< cmis_sync.module
 // $Id$
 
 /**
@@ -21,8 +22,12 @@ function cmis_sync_menu() {
   
   return $items;
 }
+=======
+// $Id$
+>>>>>>> 1.1.4.5.2.1
 
 /**
+<<<<<<< cmis_sync.module
 *Implementation of hook_nodeapi
 *
 */
@@ -81,7 +86,25 @@ function cmis_sync_nodeapi(& $node, $op, $teaser, $page) {
     }
   }
 }
+=======
+ * Config sample:
+ *
+ * $conf['cmis_sync_map'] = array(
+ *  'page' => array(
+ *    'enabled' => FALSE,
+ *    'cmis_type' => 'document',
+ *    'cmis_root' => '/Company Home/Guest Home/',
+ *    'content_field' => 'body',
+ *    'fields' => array(
+ *      'title'=>'title',
+ *      array('drupal'=>'nid', 'cmis'=>'custom_field', 'cmis to drupal' => FALSE, 'drupal to cmis' => TRUE)
+ *    )
+ *   )
+ *  );
+ */
+>>>>>>> 1.1.4.5.2.1
 
+<<<<<<< cmis_sync.module
 /**
  * Implementation of hook_cron
  *  
@@ -133,15 +156,39 @@ function cmis_sync_cron() {
   // Save CMIS sync settings
   if ($sync_map_changed)  {
     variable_set('cmis_sync_map', $sync_map);
+=======
+/**
+ * Implementation of hook_menu() for CMIS sync module.
+ */
+function cmis_sync_menu() {    
+  foreach (node_get_types() as $type) {
+    $type_name = $type->type;
+    $items['admin/settings/cmis/sync/'. $type_name] = array(
+      'title' => 'Sync '. $type_name,
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('cmis_sync_admin_form', $type_name),
+      'access arguments' => array('administer cmis'),
+      'file' => 'cmis_sync.admin.inc',
+      'type' => MENU_NORMAL_ITEM,
+      'weight' => 1,
+    );
+>>>>>>> 1.1.4.5.2.1
   }
+  
+  return $items;
 }
 
 /**
+<<<<<<< cmis_sync.module
  * Maps a drupal node to a cmis_object
  * 
  * @param $node
  * @return stdClass $cmis_object wrapper 
+=======
+ * Implementation of hook_theme() for CMIS sync module.
+>>>>>>> 1.1.4.5.2.1
  */
+<<<<<<< cmis_sync.module
 function _cmis_sync_drupal_to_cmis_prepare($node) {
   $sync_map = variable_get('cmis_sync_map', array());
 
@@ -222,15 +269,29 @@ function _cmis_sync_cmis_to_drupal_prepare($repository, $sync_map_type, $node_ty
   }
   
   return FALSE;
+=======
+function cmis_sync_theme() {
+  return array(
+    'cmis_sync_admin_field_map_table' => array(
+      'arguments' => array('form' => NULL),
+      'file' => 'cmis_sync.theme.inc'
+    )
+  );
+>>>>>>> 1.1.4.5.2.1
 }
 
 /**
+<<<<<<< cmis_sync.module
  * Creates/updates Drupal nodes with CMIS content.
  * 
  * @param $repository
  * @param $sync_map_type
  * @param $node_type
+=======
+ * Implementation of hook_nodeapi() for CMIS sync module.
+>>>>>>> 1.1.4.5.2.1
  */
+<<<<<<< cmis_sync.module
 function _cmis_sync_cmis_to_drupal_handle_updates($repository, $sync_map_type, $node_type) {
   // Get CMIS object properties 
   $cmis_folder = cmisapi_getProperties($repository->repositoryId, drupal_urlencode($sync_map_type['cmis_root']));
@@ -268,14 +329,32 @@ function _cmis_sync_cmis_to_drupal_handle_updates($repository, $sync_map_type, $
       watchdog('cmis_sync_cron', 'Added nid @nid', array('@nid' => $drupal_node->nid));
     }
   }
+=======
+function cmis_sync_nodeapi(& $node, $op, $teaser, $page) {
+  if (in_array($op, array('insert', 'update', 'delete'))) {
+    module_load_include('drupal.inc', 'cmis_sync');
+    _cmis_sync_drupal_cmis_update(array('node' => $node, 'op' => $op));
+  }
+>>>>>>> 1.1.4.5.2.1
 }
 
 /**
+<<<<<<< cmis_sync.module
  * Deletes Drupal nodes referencing to CMIS deleted objects. 
  * 
  * @param $repository
  * @param $sync_map_type
+=======
+ * Implementation of hook_cron
+ *  
+ * @todo 
+ *  Synchronize individual node as well. Maybe exporting a hook,
+ *  might allow other modules to implement their own sync logic.  
+ *  Handle SQL injection for CMIS query calls. Low priority.   
+ *  
+>>>>>>> 1.1.4.5.2.1
  */
+<<<<<<< cmis_sync.module
 function _cmis_sync_cmis_to_drupal_handle_deletes($repository, $sync_map_type, $node_type) {
   // Get node list
   $sync_nodes = array();
@@ -305,3 +384,9 @@ function _cmis_sync_cmis_to_drupal_handle_deletes($repository, $sync_map_type, $
     }
   }
 }
+=======
+function cmis_sync_cron() {
+  module_load_include('cmis.inc', 'cmis_sync');
+  _cmis_sync_cmis_drupal_update();
+}
+>>>>>>> 1.1.4.5.2.1

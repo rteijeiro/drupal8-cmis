@@ -15,7 +15,14 @@ function cmis_browser_content_properties() {
     $object_id = _cmis_browser_content_object_id_from_request($repository);  
     $object = cmisapi_getProperties($repository->repositoryId, $object_id);
     
-    return theme('cmis_browser_content_properties', $object);
+    $output = theme('cmis_browser_content_properties', $object);
+    
+    if (isset($_GET['no_layout'])) {
+      print $output;
+      exit();
+    }
+    
+    return $output;
   }
   catch (CMISException $e) {
     cmis_error_handler('cmis_browser', $e);

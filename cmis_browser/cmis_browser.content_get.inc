@@ -11,10 +11,10 @@ function cmis_browser_content_get() {
   
   // Invoke CMIS service
   try {
-    $repository = cmisapi_getRepositoryInfo();
-    $object_id = _cmis_browser_content_object_id_from_request($repository);  
-    $object = cmisapi_getProperties($repository->repositoryId, $object_id);
-    switch ($object->type) {
+    $repository = cmis_get_repository();    
+    $object = _cmis_browser_content_object_from_request($repository);
+    
+    switch ($object->properties['cmis:baseTypeId']) {
       case 'cmis:document': 
         return _cmis_browser_content_get_document($repository, $object);
         break;
@@ -46,7 +46,7 @@ function _cmis_browser_content_get_document($repository, $object) {
   }
   catch (CMISException $e) {
     cmis_error_handler('cmis_browser_content_get', $e);
-    drupal_set_header('HTTP/1.1 503 Service unavailable');
+    drupal_add_http_header('', 'HTTP/1.1 503 Service unavailable');
     exit();
   }
   
@@ -54,9 +54,12 @@ function _cmis_browser_content_get_document($repository, $object) {
     ob_end_clean();
   }
 
-  drupal_set_header('Cache-Control: no-cache, must-revalidate');
-  drupal_set_header('Content-type: '. $object->contentMimeType);
-  drupal_set_header('Content-Disposition: attachment; filename="'. $object->title .'"');
+  drupal_add_http_header('Cache-Control', 'no-cache, must-revalidate');
+  drupal_add_http_header('Content-type:', $object->properties['cmis:contentStreamMimeType']);
+  if ($object->properties['cmis:contentStreamMimeType'] != 'text/html') {
+    drupal_add_http_header('Content-Disposition', 'attachment; filename="'. $object->properties['cmis:name'] .'"');  
+  }
+  
    
   print($content);
 
@@ -67,28 +70,17 @@ function _cmis_browser_content_get_document($repository, $object) {
  * CMIS folder browser handler.
  *  
  */
-function _cmis_browser_content_get_folder($repository, $object, $bcarray = NULL) {
-  // Children lookup 
+function _cmis_browser_content_get_folder($repository, $object) {
   try {
-    $children = cmisapi_getChildren($repository->repositoryId, $object->id);
-    if (empty($bcarray)) {
-      try {
-        $parents = cmisapi_getObjectParents($repository->repositoryId, $object->id);
-      }
-      catch (CMISException $e) {
-        
-      }
-    } 
+    $children = cmisapi_getChildren($repository->repositoryId, $object->id)->objectList;
   }
   catch (CMISException $e) {
     cmis_error_handler('cmis_browser', $e);
     return '';
   }
-  
+
   return theme('cmis_browser', array(
-    'bcarray' => $bcarray, 
-    'children' => $children, 
-    'id' => $_GET['id'],
-    'parents' => $parents
+    'children' => $children,
+    'bcarray' => explode('/',substr($object->properties['cmis:path'],1))
   ));
 }

@@ -11,11 +11,9 @@ function cmis_browser_content_properties() {
   
   // Invoke CMIS service
   try {
-    $repository = cmisapi_getRepositoryInfo();
-    $object_id = _cmis_browser_content_object_id_from_request($repository);  
-    $object = cmisapi_getProperties($repository->repositoryId, $object_id);
-    
-    $output = theme('cmis_browser_content_properties', $object);
+    $repository = cmis_get_repository();
+    $object = _cmis_browser_content_object_from_request($repository);
+    $output = theme('cmis_browser_content_properties', array('cmis_object' => $object));
     
     if (isset($_GET['no_layout'])) {
       print $output;
@@ -27,5 +25,5 @@ function cmis_browser_content_properties() {
   catch (CMISException $e) {
     cmis_error_handler('cmis_browser', $e);
     return '';
-  }  
+  }
 }

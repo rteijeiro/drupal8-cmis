@@ -1,6 +1,5 @@
-; $Id$
 name = CMIS Browser
 description = Allows users to browse the a CMIS repository tree.
 package = CMIS
 dependencies[] = cmis
-core = "6.x"
+core = "7.x"

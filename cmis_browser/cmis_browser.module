@@ -41,14 +41,16 @@ function cmis_browser_menu() {
     'type' => MENU_CALLBACK,
     'file' => 'cmis_browser.content_autocomplete.inc'
   );
-  
-  $items['cmis/block_settings_more_items_js'] = array(
-    'page callback' => 'cmis_browser_block_settings_more_items_js',
-    'access arguments' => array('access content'),
+
+  $items['cmis/tree'] = array(
+    'title' => t('cmis tree nav'), 
+    'page callback' => 'cmis_browser_tree', 
+    'access callback' => 'user_access', 
+    'access arguments' => array('access cmis'), 
     'type' => MENU_CALLBACK,
-    'file' => 'cmis_browser.content_block.inc'
+    'file' => 'cmis_browser.content_autocomplete.inc'
   );
-  
+    
   return $items;
 }
 
@@ -64,7 +66,8 @@ function cmis_browser_theme() {
     ),
     'cmis_browser_browse_form' => array(
       'arguments' => array('form' => NULL),
-      'file' => 'cmis_browser.theme.inc'
+      'file' => 'cmis_browser.theme.inc',
+      'render element' => 'form',
     ),
     'cmis_browser_browse_children' => array(
       'arguments' => array('context' => NULL),
@@ -74,12 +77,12 @@ function cmis_browser_theme() {
       'arguments' => array('bcarray' => NULL),
       'file' => 'cmis_browser.theme.inc'
     ),
-    'cmis_browser_doc_view' => array(
-  	  'arguments' => array('cmis_object_path'),
-	  'file' => 'cmis_browser.theme.inc'
-	),
     'cmis_browser_content_properties' => array(
       'arguments' => array('cmis_object' => NULL),
+      'file' => 'cmis_browser.theme.inc'
+    ),
+    'cmis_browser_folder_picker' => array(
+      'arguments' => array('text_element' => NULL),
       'file' => 'cmis_browser.theme.inc'
     )
   );
@@ -89,18 +92,20 @@ function cmis_browser_theme() {
  * Implementation of hook_form().
  * 
  */
-function cmis_browser_browse_form($form_state) {
+function cmis_browser_browse_form($form, &$form_state) {
   $parts = explode('/', $_GET['q']);
   $path = implode('/', array_slice($parts, 2));
 
-  $form['browse']['path'] = array(
+  $form['path'] = array(
     '#type' => 'textfield',
     '#title' => t('Path'), 
     '#default_value' => '/'.  $path, 
     '#autocomplete_path' => 'cmis/autocomplete', 
-    '#size' => 50);
+    '#size' => 50,
+    //'#theme' => 'cmis_browser_folder_picker',
+    );
 
-  $form['browse']['submit'] = array(
+  $form['submit'] = array(
     '#type' => 'submit',
     '#name' => 'browse',
     '#default_value' => 'Browse',
@@ -113,7 +118,7 @@ function cmis_browser_browse_form($form_state) {
  * Implementation of hook_form_submit
  * 
  */
-function cmis_browser_browse_form_submit($form, & $form_state) {  
+function cmis_browser_browse_form_submit($form, &$form_state) {  
   unset($form_state['storage']);
   $form_state['redirect'] = 'cmis/browser'. $form_state['values']['path'];;
 }
@@ -130,7 +135,7 @@ function cmis_browser_actions_form($form_state) {
     '#collapsible' => TRUE, '#collapsed' => TRUE
   );
   
-    $form['actions']['folder_create'] = array( 
+  $form['actions']['folder_create'] = array( 
     '#type' => 'fieldset',
     '#title' => t('Create folder'), 
     '#collapsible' => TRUE, '#collapsed' => TRUE
@@ -196,135 +201,24 @@ function cmis_browser_actions_form($form_state) {
  */
 function cmis_browser_actions_form_submit($form, & $form_state) {  
   module_load_include('content_create.inc', 'cmis_browser');
-  $path = '/' . implode('/', array_slice(explode('/', $_GET['q']), 2));
+  $path = rawurlencode('/' . implode('/', array_slice(explode('/', $_GET['q']), 2)));
   
   switch($form_state['clicked_button']['#name']) {
     case 'folder_create_action':
       _cmis_browser_actions_folder_create($path, $form_state['values']['folder_name']);
       break;  
     case 'content_create_action':
-      _cmis_browser_actions_content_create(drupal_urlencode($path), $form_state['values']['content_name'], $form_state['values']['content_body'], 'text/html');
+      _cmis_browser_actions_content_create($path, $form_state['values']['content_name'], $form_state['values']['content_body'], 'text/html');
       break;
     case 'content_upload_action':
       // @todo cleanup uploaded file
       $file = file_save_upload('file');
       if ($file) {
-        _cmis_browser_actions_content_create(drupal_urlencode($path), $file->filename, file_get_contents($file->filepath), $file->filemime);
+        _cmis_browser_actions_content_create($path, $file->filename, file_get_contents(drupal_realpath($file->uri)), $file->filemime);
       }
       else {
         form_set_error('content_upload', t('Unable to handle uploaded file.'));
       }
       break;  
-  }
-}
-
-/**
- * Implementation of hook_block() for CMIS content module.
- * 
- */
-function cmis_browser_block($op = 'list', $delta = 0, $edit = array()) {
-  module_load_include('content_block.inc', 'cmis_browser');
-  
-  switch ($op) {
-    case 'list':
-      // If $op is "list", we just need to return a list of block descriptions.
-      // This is used to provide a list of possible blocks to the administrator,
-      // end users will not see these descriptions.
-      $blocks[0] = array(
-        'info' => t('CMIS Repository Document View'),
-      );
-
-      return $blocks;
-
-    case 'configure':
-      // If $op is "configure", we need to provide the administrator with a
-      // configuration form. The $delta parameter tells us which block is being
-      // configured. In this example, we'll allow the administrator to customize
-      // the text of the first block.
-      $form = array(
-        '#cache' => TRUE,
-      );
-      
-      if ($delta == 0) {
-        // All we need to provide is a text field, Drupal will take care of
-        // the other block configuration options and the save button.
-        $form['cmis_target_document_items'] = array(
-          '#tree' => TRUE,
-          '#prefix' => '<div class="clear-block" id="cmis-content-items-wrapper">',
-          '#suffix' => '</div>'
-        );
-      
-        $cmis_block_items = variable_get('cmis_target_document_items', array_fill(0, 2, '/'));
-        // Making sure that there is at least one item
-        $cmis_block_items += count($cmis_block_items) == 0?array('/'):array();
-      
-        foreach ($cmis_block_items as $key => $item) {
-          $form['cmis_target_document_items'][] = _cmis_browser_block_settings_path_form($key, $item);
-        }
-      
-        $form['cmis_target_document_items_more'] = array(
-          '#type' => 'submit',
-          '#value' => t('Add more'),
-          '#description' => t("If the amount of boxes above isn't enough, click here to add more."),
-          '#weight' => 1,
-          '#ahah' => array(
-            'path' => 'cmis/block_settings_more_items_js',
-            'wrapper' => 'cmis-content-items-wrapper',
-            'method' => 'replace',
-            'effect' => 'fade',
-          )
-        );
-      }
-    
-      return $form;
-    case 'save':
-      // If $op is "save", we need to save settings from the configuration form.
-      // Since the first block is the only one that allows configuration, we
-      // need to check $delta to make sure we only save it.
-      if ($delta == 0) {
-        $cmis_block_items = $edit['cmis_target_document_items'];
-      
-        // Removing empty items
-        foreach ($cmis_block_items as $key => $cmis_block_item) {
-          if (empty($cmis_block_item) || $cmis_block_item=='/') {
-            unset($cmis_block_items[$key]);
-          }
-        }
-    
-        // Save configuration in `cmis_target_document_items` var
-        variable_set('cmis_target_document_items', array_values($cmis_block_items));
-      }
-      return;
-    case 'view': 
-    default:
-      // If $op is "view", then we need to generate the block for display
-      // purposes. The $delta parameter tells us which block is being requested.
-      switch ($delta) {
-        case 0:
-          // The subject is displayed at the top of the block. Note that it
-          // should be passed through t() for translation.
-          $block['subject'] = t('Documents');
-          // The content of the block is typically generated by calling a custom
-          // function.
-          $block['content'] = cmis_browser_block_content(0, variable_get('cmis_target_document_items', array()));
-          break;
-      }
-      return $block;
-  }
-}
-
-/**
- * Display CMIS document list based on the path configurations.
- * 
- */
-function cmis_browser_block_content($which_block, $items = array() ) {
-  if (0 == $which_block) {
-    $content = array();
-    foreach ($items as $item) {
-      if ($item != '/') {
-        $content[] = theme('cmis_browser_doc_view', $item);
-      }
-    }
-    return implode('<br />', $content);
   }
 }

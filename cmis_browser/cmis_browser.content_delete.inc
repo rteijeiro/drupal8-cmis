@@ -13,7 +13,7 @@ function cmis_browser_content_delete_confirm(&$form_state) {
   $form['return_url'] = array('#type' => 'value', '#value' => $_GET['return_url']);
 
   try {
-    $repository = cmisapi_getRepositoryInfo();
+    $repository = cmis_get_repository();
     $cmis_object = cmisapi_getProperties($repository->repositoryId, $cmis_objectId);  
   }
   catch (CMISException $e) {
@@ -21,7 +21,7 @@ function cmis_browser_content_delete_confirm(&$form_state) {
   }
   
   return confirm_form($form,
-    t('Are you sure you want to delete %title?', array('%title' => $cmis_object->title)),
+    t('Are you sure you want to delete %name?', array('%name' => $cmis_object->properties['cmis:name'])),
     $_GET['return_url'],
     t('This action cannot be undone.'),
     t('Delete'),
@@ -39,10 +39,10 @@ function cmis_browser_content_delete_confirm_submit($form, &$form_state) {
   if ($form_state['values']['confirm']) {
     $cmis_objectId = $form_state['values']['cmis_objectId'];
     try {
-      $repository = cmisapi_getRepositoryInfo();
+      $repository = cmis_get_repository();
       $cmis_object = cmisapi_getProperties($repository->repositoryId, $cmis_objectId);
       $content = cmisapi_deleteObject($repository->repositoryId, $cmis_object->id);
-      drupal_set_message(t('CMIS object @name has been deleted.', array('@name' => $cmis_object->title)));
+      drupal_set_message(t('CMIS object @name has been deleted.', array('@name' => $cmis_object->properties['cmis:name'])));
     }
     catch (CMISException $e) {
       cmis_error_handler('cmis_content_delete', $e);

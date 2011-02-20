@@ -1,6 +1,7 @@
-; $Id$
 name = CMIS Query
 description = Allows users to run CMIS queries against a CMIS repository.
 package = CMIS
 dependencies[] = cmis
-core = "6.x"
+dependencies[] = cmis_browser
+core = "7.x"
+project = "cmis"

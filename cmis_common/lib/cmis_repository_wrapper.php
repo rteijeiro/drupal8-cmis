@@ -212,7 +212,8 @@ class CMISRepositoryWrapper {
 		$prop_nodes = $xmlnode->getElementsByTagName("object")->item(0)->getElementsByTagName("properties")->item(0)->childNodes;
 		foreach ($prop_nodes as $pn) {
 			if ($pn->attributes) {
-				$retval->properties[$pn->attributes->getNamedItem("propertyDefinitionId")->nodeValue] = $pn->getElementsByTagName("value")->item(0)->nodeValue;
+        //supressing errors since PHP sometimes sees DOM elements as "non-objects"
+			  @$retval->properties[$pn->attributes->getNamedItem("propertyDefinitionId")->nodeValue] = $pn->getElementsByTagName("value")->item(0)->nodeValue;
 			}
 		}
         $retval->uuid=$xmlnode->getElementsByTagName("id")->item(0)->nodeValue;
@@ -394,7 +395,7 @@ class CMISService extends CMISRepositoryWrapper {
 	}
 	
 	function getPropertyType($typeId,$propertyId) {
-		if ($this->_type_cache[$typeId]) {
+	  if (!empty($this->_type_cache[$typeId])) {
 			return $this->_type_cache[$typeId]->properties[$propertyId]["cmis:propertyType"];
 		}
 		$obj=$this->getTypeDefinition($typeId);

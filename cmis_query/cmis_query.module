@@ -13,10 +13,9 @@ function cmis_query_menu() {
   $items = array();
   $items['cmis/query'] = array(
     'type' => MENU_NORMAL_ITEM,
-    'title' => t('CMIS Query'), 
-    'page callback' => 'cmis_query_view',  
+    'title' => t('CMIS Query'),
+    'page callback' => 'cmis_query_view',
     'access arguments' => array('access cmis'),
-    'file' => 'cmis_query.pages.inc',
   );
 
   return $items;
@@ -29,36 +28,81 @@ function cmis_query_theme() {
   return array(
     'cmis_query_results' => array(
       'arguments' => array('rows' => NULL),
-      'file' => 'cmis_query.theme.inc'
     ),
-    'cmis_query_pager' => array(
-      'arguments' => array('query' => NULL, 'p' => NULL),
-      'file' => 'cmis_query.theme.inc'
-    )
   );
+}
+
+/**
+ * Implementation of hook_view()
+ *
+ * @param $query
+ * @param $format
+ * @param $p
+ */
+function cmis_query_view($query = NULL, $format = 'html', $p = 1) {
+  $query_result = '';
+  module_load_include('api.inc', 'cmis');
+  $query = urldecode($query);
+
+  if ($query) {
+    try {
+      $repository = cmisapi_getRepositoryInfo();
+      $repoId = !empty($repository->repositoryId) ? $repository->repositoryId : 'default';
+      $query_result = cmisapi_query($repoId, $query);
+    }
+    catch (CMISException $e) {
+      cmis_error_handler('cmis_query', $e);
+      $contents = t('Error');
+    }
+  }
+
+  switch ($format) {
+    case 'json':
+      $result = array();
+      if ($query_result) {
+        // strip links property
+        foreach ($query_result->objectList as $cmis_object) {
+          if (isset($cmis_object->links)) {
+            unset($cmis_object->links);
+          }
+          $result[] = $cmis_object;
+        }
+      }
+      $contents = NULL;
+      drupal_json_output($result);
+      break;
+
+    default:
+      $contents = drupal_render(drupal_get_form('cmis_query_form', NULL));
+      if ($query_result) {
+        $contents .= theme('cmis_query_results', array('rows' => $query_result->objectList));
+      }
+  }
+
+  return $contents;
 }
 
 /**
  * Render form for searching CMIS respository.
  */
-function cmis_query_form(&$form_state) {
+function cmis_query_form($form, &$form_state) {
   $cmis_query = array(
     '#type' => 'fieldset',
-    '#title' => t('Search the repository using CMIS SQL 1.0 queries.'), 
-    '#collapsible' => TRUE, 
+    '#title' => t('Search the repository using CMIS SQL 1.0 queries.'),
+    '#collapsible' => TRUE,
     '#collapsed' => FALSE,
   );
 
   $cmis_query['cmis_query'] = array(
     '#type' => 'textarea',
-    '#title' => t('Query'), 
+    '#title' => t('Query'),
     '#size' => 50,
     '#default_value' => urldecode(arg(2)),
   );
 
   $cmis_query['cmis_query_submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Run'), 
+    '#value' => t('Run'),
   );
 
   $form['statement'] = $cmis_query;
@@ -68,13 +112,22 @@ function cmis_query_form(&$form_state) {
 
 /**
  * Form submit for cmis_query_form - redirects to put query in url so we can use it on the results page
+ *
  */
 function cmis_query_form_submit($form, &$form_state) {
   if ($form_state['values']['cmis_query']) {
-    $form_state['redirect'] = 'cmis/query/'. urlencode(trim($form_state['values']['cmis_query']));
+    $form_state['redirect'] = 'cmis/query/' . urlencode(trim($form_state['values']['cmis_query']));
   }
-  else { 
-    $form_state['redirect'] = 'cmis/query';   
+  else {
+    $form_state['redirect'] = 'cmis/query';
     form_set_error('cmis_query_form', 'Please enter a query');
   }
+}
+
+/**
+ * Theme function for CMIS query search results
+ *
+ */
+function theme_cmis_query_results($variables) {
+  return theme('cmis_browser_browse_children', array('context' => $variables['rows']));
 }

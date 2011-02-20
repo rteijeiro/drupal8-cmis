@@ -1,0 +1,140 @@
+<?php
+// $Id$
+
+/**
+ * Implementation of hook_field_info()
+ * 
+ * @return array - field definition
+ */
+function cmis_field_field_info() {
+  return array(
+    'cmis_field_path' => array(
+      'label' => t('CMIS Field'),
+      'description' => t('Attach a CMIS object to a Drupal entity'),
+      'default_widget' => 'cmis_field_widget',
+      'default_formatter' => 'cmis_field_link',
+    )
+  );
+}
+
+/**
+ * Implements hook_field_validate().
+ *
+ * For now, just validates that the field isn't empty.
+ */
+function cmis_field_field_validate($entity_type, $entity, $field, $instance, $langcode, $items, &$errors) {
+  foreach ($items as $delta => $item) {
+    if (!empty($item['cmis_field_path'])) {
+      if (1 == 0) {
+        $errors[$field['cmis_field']][$langcode][$delta][] = array(
+          'error' => 'cmis_field_invalid',
+          'message' => t('You are in the anti-universe, where 1 == 0.'),
+        );
+      }
+    }
+  }
+}
+
+/**
+ * Implementation of hook_is_empty()
+ * 
+ * @param $item - field value(s)
+ * @param $field - field settings
+ * @return boolean - TRUE/FALSE
+ */
+function cmis_field_field_is_empty($item, $field) {
+  return empty($item['path']);
+}
+
+/**
+ * Implementation of hook_field_settings_form()
+ * 
+ * @param $op - operation
+ * @param $field - field beign operated on
+ * @return - form or settings array dependent on operation
+ */
+function cmis_field_field_settings_form($field, $instance, $has_data) {
+  $settings = $field['settings'];
+  
+  $form['cmis_field_rootFolderPath'] = array(
+    '#title' => t('Root Directory'),
+    '#description' => t('Root folder for CMIS nodes'),
+    '#type' => 'textfield',
+    '#autocomplete_path' => 'cmis/autocomplete',
+    '#default_value' => '/',
+  );
+  
+  return $form;
+}
+
+/**
+ * Implementation of hook_field_widget_info
+ * 
+ * @return array defining the widget
+ */
+function cmis_field_field_widget_info() {
+  return array(
+    'cmis_field_browser' => array(
+      'label' => t('CMIS link'),
+      'field types' => array('cmis_field_path'),
+    )
+  );
+}
+
+
+/**
+ * Implementation of hook_field_widget_form()
+ * 
+ * @param $element - the form element array
+ * @param $edit - 
+ * @param $form_state - form state array
+ * @param $form - form array
+ * @return array - form element
+ */
+function cmis_field_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+  $value = isset($items[$delta]['path']) ? $items[$delta]['path'] : '';
+  $element += array(
+    '#delta' => $delta,
+  );
+  $element['path'] = array();
+
+  $element['path'] += array(
+    '#type' => 'textfield',
+    '#default_value' => $value,
+    '#autocomplete_path' => 'cmis/autocomplete'
+  );
+  
+  return $element;
+}
+
+/**
+ * Implementation of hook_field_formatter_info()
+ * 
+ * @return array
+ */
+function cmis_field_field_formatter_info() {
+  return array( 
+    'cmis_field_link' => array( 
+       'label' => t('CMIS browser'),
+       'field types' => array('cmis_field_path')
+    )
+  );
+}
+
+
+/**
+ * Implements hook_field_formatter_view().
+ * 
+ */
+
+function cmis_field_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array();
+  switch ($display['type']) {
+    case 'cmis_field_link':
+      foreach ($items as $delta => $item) {
+        $element[$delta]['#markup'] = l($item['path'], 'cmis/browser' . $item['path']);
+      }
+      break;
+  }
+  return $element;
+}

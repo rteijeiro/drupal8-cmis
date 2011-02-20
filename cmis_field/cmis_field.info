@@ -1,0 +1,6 @@
+name = CMIS Field
+description = Drupal Field implementation for attaching CMIS repository content to an entity
+package = CMIS
+dependencies[] = cmis
+dependencies[] = cmis_browser
+core = "7.x"

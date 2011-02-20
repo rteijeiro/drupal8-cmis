@@ -1,0 +1,6 @@
+name = CMIS headerswing transport
+description = Provides CMIS service. Requires a third party component(ie. HTTPAuth) to populate request headers with authentication details.   
+package = CMIS
+dependencies[] = cmis
+dependencies[] = cmis_common
+core = "7.x"

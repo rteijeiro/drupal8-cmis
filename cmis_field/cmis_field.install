@@ -1,0 +1,24 @@
+<?php
+/**
+ * @file install file for cmis  field
+ */
+
+/**
+ * Implements hook_field_schema().
+ *
+ * This defines the actual database schema of the field, using the format
+ * used by the Schema API.
+ *
+ * The data being saved is the repository id and cmis object id of the cmis object
+ *
+ * @see hook_field_schema()
+ */
+function cmis_field_field_schema($field) {
+  $columns = array(
+    'path' => array('type' => 'varchar', 'length' => 100, 'not null' => FALSE),
+  );
+  return array(
+    'columns' => $columns,
+    //'indexes' => $indexes,
+  );
+}

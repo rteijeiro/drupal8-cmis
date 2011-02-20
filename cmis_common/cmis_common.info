@@ -1,0 +1,6 @@
+name = CMIS Common
+description = CMIS common client implementation
+package = CMIS
+core = "7.x"
+project = "cmis"
+

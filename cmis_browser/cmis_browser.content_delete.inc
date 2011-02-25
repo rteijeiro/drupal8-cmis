@@ -1,5 +1,4 @@
 <?php 
-// $Id$
 
 /**
  * Menu callback -- ask for confirmation of CMIS object deletion

@@ -1,5 +1,4 @@
 <?php 
-// $Id$
 
 /**
  * Cmis folder picker autocomplete callback.

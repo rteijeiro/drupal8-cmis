@@ -1,5 +1,4 @@
 <?php 
-// $Id$
 
 function theme_cmis_browser($variables) {
   // Render output

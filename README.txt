@@ -1,4 +1,3 @@
-// $Id$
 
 Content Management Interoperability Services client api
 -------------------------------------------------------

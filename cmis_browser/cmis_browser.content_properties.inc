@@ -1,5 +1,4 @@
 <?php 
-// $Id$
 
 /**
  * CMIS object properties page.

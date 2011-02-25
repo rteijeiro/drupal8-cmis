@@ -1,5 +1,4 @@
 <?php 
-// $Id$
 
 /**
  * Build cmis_browser browse page.

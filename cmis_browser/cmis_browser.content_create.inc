@@ -1,5 +1,4 @@
 <?php 
-// $Id$
 
 /**
  * Create $folder_name under $parent_folder

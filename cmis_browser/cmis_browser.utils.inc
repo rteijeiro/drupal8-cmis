@@ -1,5 +1,4 @@
 <?php 
-// $Id$
 
 /**
  * Helper method used to lookup CMIS object from request.

@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 /**
  * Handles CMIS to Drupal updates.

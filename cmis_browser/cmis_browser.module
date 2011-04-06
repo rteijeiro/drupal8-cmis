@@ -54,14 +54,30 @@ function cmis_browser_menu() {
 }
 
 /**
+ * Implements hook_admin_paths
+ */
+function cmis_browser_admin_paths() {
+  $paths = array(
+    'cmis/properties' => TRUE,
+  );
+  return $paths;
+}
+
+/**
  * Register custom themes for cmis_browser module.
  * 
  */
 function cmis_browser_theme() {
   return array(
+    'cmis_browser_popup' => array(
+      'arguments' => array('context' => NULL),
+      'file' => 'cmis_browser.theme.inc',
+      'render element' => 'page',
+      'template' => 'cmis-browser-popup',
+    ),
     'cmis_browser' => array(
       'arguments' => array('context' => NULL),
-      'file' => 'cmis_browser.theme.inc'
+      'file' => 'cmis_browser.theme.inc',
     ),
     'cmis_browser_browse_form' => array(
       'arguments' => array('form' => NULL),
@@ -83,9 +99,10 @@ function cmis_browser_theme() {
     'cmis_browser_folder_picker' => array(
       'arguments' => array('text_element' => NULL),
       'file' => 'cmis_browser.theme.inc'
-    )
+    ),
   );
 }
+
   
 /**
  * Implementation of hook_form().
@@ -94,7 +111,9 @@ function cmis_browser_theme() {
 function cmis_browser_browse_form($form, &$form_state) {
   $parts = explode('/', $_GET['q']);
   $path = implode('/', array_slice($parts, 2));
-
+  
+//TODO: Removing autocomplete as a buggy (and not-so-useful) feature. Need to replace with search. 
+/*
   $form['path'] = array(
     '#type' => 'textfield',
     '#title' => t('Path'), 
@@ -109,8 +128,9 @@ function cmis_browser_browse_form($form, &$form_state) {
     '#name' => 'browse',
     '#default_value' => 'Browse',
   );
-    
+
   return $form;
+  */    
 }
 
 /**

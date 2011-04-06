@@ -69,7 +69,6 @@ function cmis_common_cmis_service($url, $properties, $settings, $dry_run = FALSE
     }    
     curl_setopt($session, CURLOPT_HTTPHEADER, $headers);
   }
-  
   if ($properties['data']) {
     curl_setopt($session, CURLOPT_POSTFIELDS, $properties['data']);
   }
@@ -94,7 +93,7 @@ function cmis_common_cmis_service($url, $properties, $settings, $dry_run = FALSE
     if (!in_array($retval->code, array(200,201,204))) {
       throw new CMISException(t("HTTP call to [@url] returned [@code]. Response: @response", array(
         '@code' => $retval->code,
-        '@response' => $retval->body,
+        '@response' => strip_tags($retval->body),
         '@url' => $url
       )));
     }

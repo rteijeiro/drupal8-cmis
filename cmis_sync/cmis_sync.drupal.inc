@@ -98,7 +98,7 @@ function _cmis_sync_drupal_cmis_prepare($node) {
   $sync_map = variable_get('cmis_sync_map', array());
 
   // is cmis sync enabled for this node type?
-  if ($sync_map[$node->type] && $sync_map[$node->type]['enabled']) {
+  if (!empty($sync_map[$node->type]) && $sync_map[$node->type]['enabled']) {
     $cmis_object = new stdClass();
     
     // merge in defaults

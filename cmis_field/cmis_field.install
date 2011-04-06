@@ -15,10 +15,10 @@
  */
 function cmis_field_field_schema($field) {
   $columns = array(
-    'path' => array('type' => 'varchar', 'length' => 100, 'not null' => FALSE),
+    'path' => array('type' => 'varchar', 'length' => 150, 'not null' => FALSE),
+    'title' => array('type' => 'varchar', 'length' => 255, 'not null' => FALSE),
   );
   return array(
     'columns' => $columns,
-    //'indexes' => $indexes,
   );
 }

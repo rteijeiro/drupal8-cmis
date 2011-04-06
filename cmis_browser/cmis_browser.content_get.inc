@@ -78,8 +78,10 @@ function _cmis_browser_content_get_folder($repository, $object) {
     return '';
   }
 
-  return theme('cmis_browser', array(
+  $hook = (!empty($_GET['type']) && $_GET['type'] == 'popup') ? 'cmis_browser_popup' : 'cmis_browser';
+  return theme($hook, array(
     'children' => $children,
-    'bcarray' => explode('/',substr($object->properties['cmis:path'],1))
+    'bcarray' => explode('/',substr($object->properties['cmis:path'],1)),
+    'type' => !empty($_GET['type']) ? check_plain($_GET['type']) : '',
   ));
 }

@@ -3,8 +3,11 @@
 function theme_cmis_browser($variables) {
   // Render output
   drupal_add_css(drupal_get_path('module', 'cmis_browser') .'/css/cmis_browser.css');
-  $contents = drupal_render(drupal_get_form('cmis_browser_browse_form'));
-  $contents .= drupal_render(drupal_get_form('cmis_browser_actions_form'));
+  $contents = '';
+  if ($variables['type'] != 'popup') {
+    $contents = drupal_render(drupal_get_form('cmis_browser_browse_form'));
+    $contents .= drupal_render(drupal_get_form('cmis_browser_actions_form'));
+  }
   $contents .= theme('cmis_browser_browse_breadcrumb', array('bcarray' => $variables['bcarray']));
   $contents .= theme('cmis_browser_browse_children', array('context' => $variables['children']));
   
@@ -38,28 +41,62 @@ function theme_cmis_browser_browse_children($variables) {
   foreach ($variables['context'] as $child) {
     $author = $child->properties['cmis:createdBy'];
     $updated = date_format(date_create($child->properties['cmis:lastModificationDate']), 'n/j/Y g:i A');
-    $actions = array( 
-      l(t('properties'), 'cmis/properties', array('attributes' => array('class' => 'action properties'), 'query' => array('id' => $child->id))),
-      l(t('delete'), 'cmis/delete', array('query' => array('id' => $child->id, 'return_url' => $_GET['q'])))
-    );
+    $actions = array();
+    //print_r($child->properties);
+    if (!empty($_GET['type']) && $_GET['type'] == 'popup') {
+      if ($_GET['caller'] == 'settings') {
+        if (!empty($child->properties['cmis:path'])) {
+          $actions = array(
+            l('Choose', $child->properties['cmis:path'], 
+              array('attributes' => array('class' => 'cmis-field-insert', 'id' => $child->id, 'name' => $child->properties['cmis:name']))
+             ),
+          );
+        }
+      }
+      else {
+        if (empty($child->properties['cmis:path'])) {
+          $actions = array(
+            l('Choose', '', 
+              array('attributes' => array('class' => 'cmis-field-insert', 'id' => $child->id, 'name' => $child->properties['cmis:name']))
+             ),
+          );
+        }
+      }
+    }
+    else {
+      $actions = array( 
+        l(t('properties'), 'cmis/properties', array('attributes' => array('class' => 'action properties'), 'query' => array('id' => $child->id))),
+        l(t('delete'), 'cmis/delete', array('query' => array('id' => $child->id, 'return_url' => $_GET['q'])))
+      );  
+    }
     
     switch ($child->properties['cmis:baseTypeId']) {
       case 'cmis:folder':
         $icon = $folder_img;
-        $link = l($child->properties['cmis:name'], 'cmis/browser'. $child->properties['cmis:path']);
+        if (!empty($_GET['type']) && $_GET['type'] == 'popup') {
+          $link = l($child->properties['cmis:name'], 'cmis/browser'. $child->properties['cmis:path'], array('query' => array('type' => 'popup', 'caller' => $_GET['caller'])));
+        }
+        else {
+          $link = l($child->properties['cmis:name'], 'cmis/browser'. $child->properties['cmis:path']);
+        }
         $mimetype = 'Space';
         $size = '';
         break;
       default:      
         $icon = $document_img;
-        $link = l($child->properties['cmis:name'], 'cmis/browser', array('query' => array('id' => $child->id)));
+        if ($_GET['type'] == 'popup') {
+          $link = l($child->properties['cmis:name'], 'cmis/browser', array('query' => array('id' => $child->id, 'type' => 'popup', 'caller' => $_GET['caller'])));
+        }
+        else {
+          $link = l($child->properties['cmis:name'], 'cmis/browser', array('query' => array('id' => $child->id)));
+        }
         $mimetype = $child->properties['cmis:contentStreamMimeType'];
         $size = number_format($child->properties['cmis:contentStreamLength'] / 1000, 2, '.', ',') .' K';
     }
     
     $rows[] = array($icon .' '. $link, $mimetype, $size, $author, $updated, theme('item_list', array('items' => $actions, 'title' => NULL, 'type' => 'ul', 'attributes' => array('class'=>'actions'))));
   }
-  
+  /*
   drupal_add_js('
     $(document).ready(function() {
       $("A.action.properties").each(function() {
@@ -76,7 +113,7 @@ function theme_cmis_browser_browse_children($variables) {
         }).parents("LI:first").toggleClass("collapsed");
       });
     });', 'inline');
-
+  */
   return theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('class' => array('cmis_browser_browse_children')))); 
 }
 
@@ -91,13 +128,23 @@ function theme_cmis_browser_browse_breadcrumb($variables) {
   $currentpath = '';
   
   $contents .= '<div id="cmis-breadcrumb">';
-  $contents .= l('Root', 'cmis/browser'. $currentpath);
+  if (!empty($_GET['type']) && $_GET['type'] == 'popup') {
+    $contents .= l('Root', 'cmis/browser'. $currentpath, array('query' => array('type' => 'popup', 'caller' => $_GET['caller'])));
+  }
+  else {
+    $contents .= l('Root', 'cmis/browser'. $currentpath);
+  }
   
   $currentpath = '';
   foreach ($variables['bcarray'] as $space) {
     $contents .= $next_img .' ';
     $currentpath .= '/'. $space;
-    $pagelink = l($space, 'cmis/browser'. $currentpath);
+    if (!empty($_GET['type']) && $_GET['type'] == 'popup') {
+      $pagelink = l($space, 'cmis/browser'. $currentpath, array('query' => array('type' => 'popup', 'caller' => $_GET['caller'])));
+    }
+    else {
+      $pagelink = l($space, 'cmis/browser'. $currentpath);
+    }
     $contents .= $pagelink;    
   }
 
@@ -181,4 +228,12 @@ function theme_cmis_browser_folder_picker($variables) {
     .'<a href="#"> Tree </a>'
     .'<div class="tree" style="display:none"></div>'
   .'</div>';
+}
+
+function cmis_browser_preprocess_cmis_browser_popup(&$vars) {
+  $vars['breadcrumb'] = theme('cmis_browser_browse_breadcrumb', array('bcarray' => $vars['bcarray']));
+  $vars['children'] = theme('cmis_browser_browse_children', array('context' => $vars['children']));
+  drupal_add_js(drupal_get_path('module', 'cmis_field') . '/js/cmis_field.js');
+  $vars['scripts'] = drupal_get_js();
+  $vars['styles'] = drupal_get_css();
 }

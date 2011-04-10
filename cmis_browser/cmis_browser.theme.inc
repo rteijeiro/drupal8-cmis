@@ -5,8 +5,8 @@ function theme_cmis_browser($variables) {
   drupal_add_css(drupal_get_path('module', 'cmis_browser') .'/css/cmis_browser.css');
   $contents = '';
   if ($variables['type'] != 'popup') {
-    $contents = drupal_render(drupal_get_form('cmis_browser_browse_form'));
-    $contents .= drupal_render(drupal_get_form('cmis_browser_actions_form'));
+    $contents = drupal_render((drupal_get_form('cmis_browser_browse_form')));
+    $contents .= drupal_render((drupal_get_form('cmis_browser_actions_form')));
   }
   $contents .= theme('cmis_browser_browse_breadcrumb', array('bcarray' => $variables['bcarray']));
   $contents .= theme('cmis_browser_browse_children', array('context' => $variables['children']));

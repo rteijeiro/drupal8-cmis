@@ -72,7 +72,7 @@ function cmis_query_view($query = NULL, $format = 'html', $p = 1) {
       break;
 
     default:
-      $contents = drupal_render(drupal_get_form('cmis_query_form', NULL));
+      $contents = drupal_render((drupal_get_form('cmis_query_form', NULL)));
       if ($query_result) {
         $contents .= theme('cmis_query_results', array('rows' => $query_result->objectList));
       }

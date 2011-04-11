@@ -190,8 +190,8 @@ function cmis_vendor_invoke() {
  */
 function cmis_permission() {
   $perms = array(
-    'administer cmis',
-    'access cmis',
+    'administer cmis' => array('title' => 'Administer CMIS', 'description' => 'Perform administrative tasks related to the CMIS module'),
+    'access cmis' => array('title' => 'Access CMIS data', 'description' => 'Access data from the CMIS repository'),
   );
   return $perms;
 }

@@ -1,7 +1,7 @@
 <?php 
 
 /**
- * Implementation of hook_cmis_service($url, $properties, $settings)
+ * Implementation of hook_cmis_invoke($url, $properties, $settings)
  * 
  * $conf example:
  * $conf['cmis_repositories'] = array(
@@ -23,7 +23,7 @@
  * );
  * 
  */
-function cmis_headerswing_cmis_service($url, $properties, $settings) { 
+function cmis_headerswing_cmis_invoke($url, $properties, $settings) { 
   if (array_key_exists('headerswing_headers', $settings)) {
     if (!array_key_exists('headers', $properties)) {
       $properties['headers'] = array();
@@ -36,15 +36,15 @@ function cmis_headerswing_cmis_service($url, $properties, $settings) {
     }
   }
   
-  /* example on how to decorate cmis_common_cmis_service() method:
-  $retval = cmis_common_cmis_service($url, $properties, $settings, TRUE);
+  /* example on how to decorate cmis_common_cmis_invoke() method:
+  $retval = cmis_common_cmis_invoke($url, $properties, $settings, TRUE);
   
   // ...
   // do some custom code here, before doing the actual call
   // ...
   
   // execute curl session. These fields are mandatory in order to
-  // get a working hook_cmis_service() implementation.
+  // get a working hook_cmis_invoke() implementation.
   $retval->body = curl_exec($retval->curl_session);
   $retval->code = curl_getinfo($retval->curl_session, CURLINFO_HTTP_CODE);
   $retval->content_type = curl_getinfo($retval->curl_session, CURLINFO_CONTENT_TYPE);
@@ -54,5 +54,5 @@ function cmis_headerswing_cmis_service($url, $properties, $settings) {
   return $retval;
   */  
   
-  return cmis_common_cmis_service($url, $properties, $settings);
+  return cmis_common_cmis_invoke($url, $properties, $settings);
 }

@@ -182,7 +182,7 @@ function _cmis_sync_drupal_cmis_prepare($node) {
     $cmis_object->sync_deletes = $sync_map[$node->type]['deletes'];
     
     // call hook_sync_drupal_cmis_prepare() hooks
-    module_invoke_all('sync_drupal_cmis_prepare', $node, &$cmis_object);
+    module_invoke_all('sync_drupal_cmis_prepare', $node, $cmis_object);
     
     return $cmis_object;
   }

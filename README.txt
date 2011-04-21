@@ -10,7 +10,7 @@ Content Management Interoperability Services client api
                         the current CMIS repository.
   * cmis_sync.module - Allows synchronization between
                        Drupal nodes and CMIS objects.
-  * cmis_headerswing.module - Demo module that demonstrates using hook_cmis_service()
+  * cmis_headerswing.module - Demo module that demonstrates using hook_cmis_invoke()
 			      to access the CMIS repository via header-based authentication
                               such as Basic Auth or NTLM.
   * cmis_dev.module - Demo module that displays current CMIS repository's properties. Useful for basic connection testing.
@@ -63,7 +63,7 @@ $conf['cmis_repositories'] = array(
   * browser_default_folderId, browser_default_folderPath
       - default CMIS folder displayed by cmis_browser module
       - optional, defaults to `repositoryInfo['cmis:rootFolderId']`, used by cmis_browser
-  * transport - Drupal's module that implements hook_cmis_service($url, $properties, $settings) hook, where :
+  * transport - Drupal's module that implements hook_cmis_invoke($url, $properties, $settings) hook, where :
                       - $url - CMIS absolute REST url
                       - $properties - request properties
                       - $settings - CMIS repositories settings comming from $conf['cmis_repositories']
@@ -167,7 +167,7 @@ $conf['cmis_sync_map']['page']['fields'] = array(
 CMIS Hooks
 ----------
  
- * hook_cmis_service() - allows control over CMIS repository connection.
+ * hook_cmis_invoke() - allows control over CMIS repository connection.
  * hook_cmis_info() - used to register a module that implements a CMIS client.
  * hook_cmisapi_invoke() - called by cmis api whenever a cmisapi_* is called.
  * hook_cmisapi_*() - where * means any CMIS call(ie. getRepositoryInfo).
@@ -178,7 +178,7 @@ CMIS Hooks
   - cmis.module
   - cmis.api.inc
   - cmis_custom.module (hook_cmisapi_invoke)
-  - cmis_headerswing.module (hook_cmis_service)
+  - cmis_headerswing.module (hook_cmis_invoke)
  
   
 CMIS Sync Hooks
@@ -204,7 +204,7 @@ CMIS Headerswing Settings
  a third party component that populates $_SERVER vars with credentials, such as HTTP Basic or NTLM.
 
  This module also provides an example of how to create a custom implementation of 
- hook_cmis_service(), overriding the default transport mechanism.
+ hook_cmis_invoke(), overriding the default transport mechanism.
 
  Configuration sample:
 

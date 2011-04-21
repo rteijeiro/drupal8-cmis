@@ -9,7 +9,7 @@ class CommonCMISService extends CMISService {
     else {
       $repoId = 'default';
     }
-    $result = cmis_service($repoId, $url, array(
+    $result = cmis_invoke($repoId, $url, array(
       'method' => $method,
       'data' => $content,
       'headers' => array('Content-Type' => $contentType .(!is_null($charset)?'; charset='. $charset:'')),

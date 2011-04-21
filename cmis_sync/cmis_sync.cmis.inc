@@ -245,7 +245,7 @@ function _cmis_sync_cmis_drupal_prepare($repository, $sync_map_type, $node_type,
     }
     
     // call hook_sync_cmis_drupal_prepare() hooks
-    module_invoke_all('sync_cmis_drupal_prepare', $cmis_object, &$node);
+    module_invoke_all('sync_cmis_drupal_prepare', $cmis_object, $node);
     
     return $node;
   }

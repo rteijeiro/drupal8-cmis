@@ -117,7 +117,7 @@ function cmis_get_repository($id_or_alias = NULL) {
  *
  * @return stdClass
  */
-function cmis_service($repositry_id, $url = '', $properties = array()) {
+function cmis_invoke($repositry_id, $url = '', $properties = array()) {
   // merge in defaults
   $properties += array(
     'headers' => array(),
@@ -129,9 +129,9 @@ function cmis_service($repositry_id, $url = '', $properties = array()) {
   $cmis_repository = cmis_get_repository((string) $repositry_id);
   $cmis_transport = $cmis_repository->settings['transport'];
 
-  // invoke hook_cmis_service()
+  // invoke hook_cmis()
   if (module_exists($cmis_transport)) {
-    return module_invoke($cmis_transport, 'cmis_service', $url, $properties, $cmis_repository->settings);  
+    return module_invoke($cmis_transport, 'cmis_invoke', $url, $properties, $cmis_repository->settings);  
   }
   else {
     throw new CMISException(t('Unable to lookup CMIS transport [@cmis_transport] for [@cmis_id_or_alias]',

@@ -84,7 +84,7 @@ function theme_cmis_browser_browse_children($variables) {
         break;
       default:      
         $icon = $document_img;
-        if ($_GET['type'] == 'popup') {
+        if (!empty($_GET['type']) && $_GET['type'] == 'popup') {
           $link = l($child->properties['cmis:name'], 'cmis/browser', array('query' => array('id' => $child->id, 'type' => 'popup', 'caller' => $_GET['caller'])));
         }
         else {

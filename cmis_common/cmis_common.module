@@ -38,7 +38,7 @@ function cmis_common_cmisapi_invoke() {
     module_load_include('utils.inc', 'cmis_common');
     
     // CommonCMISService allows other modules to control the way CMISService class
-    // calls the CMIS repositories via hook_cmis_service()
+    // calls the CMIS repositories via hook_cmis_invoke()
     $cmis_repository->service = new CommonCMISService($cmis_repository->settings['url'],
                                                       $cmis_repository->settings['user'],
                                                       $cmis_repository->settings['password']);
@@ -48,10 +48,10 @@ function cmis_common_cmisapi_invoke() {
 }
 
 /**
- * Implementation of hook_cmis_service($url, $properties, $settings)
+ * Implementation of hook_cmis_invoke($url, $properties, $settings)
  *
  */
-function cmis_common_cmis_service($url, $properties, $settings, $dry_run = FALSE) {
+function cmis_common_cmis_invoke($url, $properties, $settings, $dry_run = FALSE) {
   $session = curl_init($url);
 
   curl_setopt($session, CURLOPT_HEADER, false);

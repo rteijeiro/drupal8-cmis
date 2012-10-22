@@ -60,7 +60,7 @@ function cmis_field_field_instance_settings_form($field, $instance) {
     '#title' => t('Root Directory'),
     '#description' => t('Root folder for CMIS nodes'),
     '#type' => 'textfield',
-    '#default_value' => $settings['cmis_field_rootFolderPath'],
+    '#default_value' => isset($settings['cmis_field_rootFolderPath']),
   );
   
   $form['#attached']['js'] = array(
@@ -107,16 +107,17 @@ function cmis_field_field_widget_form(&$form, &$form_state, $field, $instance, $
   $element['title'] += array(
     '#type' => 'textfield',
     '#default_value' => $title,
+    '#attributes' => array('class' => array('edit-field-cmis-field')),
   );
   $element['path'] += array(
     '#type' => 'hidden',
-    '#attributes' => array('id' => 'edit-field-cmis-path'),
+    '#attributes' => array('class' => array('edit-field-cmis-path', 'search-form')),
     '#default_value' => $path,
   );
   
   $element['#attached']['js'] = array(
     array('data' => drupal_get_path('module', 'cmis_field') . '/js/cmis_field.js'),
-    array('data' => array('cmispath' => $instance['settings']['cmis_field_rootFolderPath']), 'type' => 'setting'),
+    array('data' => array('cmispath' => isset($instance['settings']['cmis_field_rootFolderPath'])), 'type' => 'setting'),
   );
   return $element;
 }

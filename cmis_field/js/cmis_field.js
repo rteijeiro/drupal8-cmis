@@ -3,7 +3,8 @@
   Drupal.behaviors.cmisField = {
     attach: function(context, settings) {
       //TODO: This selector doesn't seem right - will it work if there's a different default lang.?
-      $("#edit-field-cmis-und-0-title", context).after('<input type="button" id="edit-cmis-field" class="cmis-field-insert-button form-submit" value="Browse" />');
+      //$("#edit-field-cmis-und-0-title", context).after('<input type="button" id="edit-cmis-field" class="cmis-field-insert-button form-submit" value="Browse" />');
+      $(".edit-field-cmis-field", context).after('<input type="button" id="edit-cmis-field" class="cmis-field-insert-button form-submit" value="Browse" />');
       $("#edit-instance-settings-cmis-field-rootfolderpath", context).after('<input type="button" id="edit-cmis-settings" class="cmis-field-insert-button form-submit" value="Browse" />');
       $('.cmis-field-insert-button').click(function() {
         var caller = '';
@@ -15,7 +16,12 @@
         }
         var rootDir = Drupal.settings.cmispath;
         //TODO: Make this a modal, not a popup (will be much harder to manage context when clicking around the cmis browser)
-        window.open('/cmis/browser' + rootDir + '?type=popup&caller=' + caller, 'cmisBrowser', 'width=800,height=500,resizable');
+        if (rootDir == true){
+	      rootDir === '';
+	      window.open('/cmis/browser?type=popup&caller=' + caller, 'cmisBrowser', 'width=800,height=500,resizable');
+        }else{
+          window.open('/cmis/browser' + rootDir + '?type=popup&caller=' + caller, 'cmisBrowser', 'width=800,height=500,resizable');
+        }
         return false;
       });
       
@@ -27,8 +33,9 @@
         else {
           var cmispath = $(this).attr('id');
           var cmisname = $(this).attr('name');
-          $('#edit-field-cmis-und-0-title', window.opener.document).val(cmisname);
-          $('#edit-field-cmis-path', window.opener.document).val(cmispath);
+          //$('#edit-field-cmis-und-0-title', window.opener.document).val(cmisname);          
+          $('.edit-field-cmis-field', window.opener.document).val(cmisname);
+          $('.edit-field-cmis-path', window.opener.document).val(cmispath);
         }
         window.close();
         return false;

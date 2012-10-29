@@ -18,7 +18,7 @@ Content Management Interoperability Services client api
 
 Contents
 --------
-
+ * Requirements
  * Installation
  * Repository Configuration
  * Drupal-CMIS Syncronization
@@ -27,6 +27,9 @@ Contents
  * CMIS Headerswing Settings
  * Credits
  
+Requirements
+------------
+PHP cURL 
 
 Installation
 ------------

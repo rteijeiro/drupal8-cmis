@@ -67,10 +67,10 @@ function _cmis_sync_cmis_drupal_update($context = array()) {
 function _cmis_sync_cmis_drupal_handle_updates($repository, $sync_map_type, $node_type) {
   // get CMIS object properties 
   if (isset($sync_map_type['cmis_folderId'])) {
-    $cmis_folder = cmisapi_getProperties($cmis_repository->repositoryId, $sync_map_type['cmis_folderId']);
+    $cmis_folder = cmisapi_getProperties($repository->repositoryId, $sync_map_type['cmis_folderId']);
   }
   elseif (isset($sync_map_type['cmis_folderPath'])) {
-    $cmis_folder = cmisapi_getObjectByPath($cmis_repository->repositoryId, $sync_map_type['cmis_folderPath']);
+    $cmis_folder = cmisapi_getObjectByPath($repository->repositoryId, $sync_map_type['cmis_folderPath']);
   }
   else {
     throw new CMISException(t("Please set `cmis_folderPath` or `cmis_folderId` properties for [@type] Drupal type.", array(

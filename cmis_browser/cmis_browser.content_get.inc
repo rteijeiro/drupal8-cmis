@@ -77,7 +77,6 @@ function _cmis_browser_content_get_folder($repository, $object) {
     cmis_error_handler('cmis_browser', $e);
     return '';
   }
-
   $hook = (!empty($_GET['type']) && $_GET['type'] == 'popup') ? 'cmis_browser_popup' : 'cmis_browser';
   return theme($hook, array(
     'children' => $children,

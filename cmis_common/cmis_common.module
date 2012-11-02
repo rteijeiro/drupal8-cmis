@@ -39,9 +39,13 @@ function cmis_common_cmisapi_invoke() {
     
     // CommonCMISService allows other modules to control the way CMISService class
     // calls the CMIS repositories via hook_cmis_invoke()
-    $cmis_repository->service = new CommonCMISService($cmis_repository->settings['url'],
+    if (module_exists('alfrescocloud_auth')) {
+      $cmis_repository->service = new CommonCMISService($cmis_repository->settings['url'], '', '');
+    }else{
+      $cmis_repository->service = new CommonCMISService($cmis_repository->settings['url'],
                                                       $cmis_repository->settings['user'],
                                                       $cmis_repository->settings['password']);
+    }
   }
   
   return call_user_func_array(array($cmis_repository->service, $cmis_method), $args);
@@ -53,21 +57,27 @@ function cmis_common_cmisapi_invoke() {
  */
 function cmis_common_cmis_invoke($url, $properties, $settings, $dry_run = FALSE) {
   $session = curl_init($url);
-
   curl_setopt($session, CURLOPT_HEADER, false);
   curl_setopt($session, CURLOPT_RETURNTRANSFER, true);
-  if ($settings['user']) {
+
+  if (isset($settings['user'])) {
     curl_setopt($session, CURLOPT_USERPWD, $settings['user'] . ":" . $settings['password']);
+  }else if(isset($_COOKIE["alf_access_token"])) {
+    $properties['headers']['Authorization'] = 'Bearer '. $_COOKIE["alf_access_token"];
   }
-  
+  // Need to check that the Alfresco Cloud Module is enabled.
   curl_setopt($session, CURLOPT_CUSTOMREQUEST, $properties['method']);
-  
   if ($properties['headers']) {
     $headers = array();
     foreach($properties['headers'] as $header_name => $header_value) {
       $headers[] = $header_name .': '. $header_value;
     }    
     curl_setopt($session, CURLOPT_HTTPHEADER, $headers);
+    
+    /*    curl_setopt($session, CURLOPT_HTTPHEADER, array(
+    'Authorization:Bearer '.$_COOKIE["alf_access_token"]
+    ));
+    */
   }
   if ($properties['data']) {
     curl_setopt($session, CURLOPT_POSTFIELDS, $properties['data']);
@@ -91,11 +101,21 @@ function cmis_common_cmis_invoke($url, $properties, $settings, $dry_run = FALSE)
     curl_close($session);
     
     if (!in_array($retval->code, array(200,201,204))) {
-      throw new CMISException(t("HTTP call to [@url] returned [@code]. Response: @response", array(
-        '@code' => $retval->code,
-        '@response' => strip_tags($retval->body),
-        '@url' => $url
-      )));
+    
+      if (module_exists('alfrescocloud_auth')) {
+        $jsonerrmsg = json_decode($retval->body);
+        $path = isset($_GET['q']) ? $_GET['q'] : '<front>';
+        $link = url($path, array('absolute' => FALSE));
+        if ($retval->code == '401'){
+          drupal_goto("alfresco/cloud/auth", array('fragment' => $link));
+	    }
+      }else{
+         throw new CMISException(t("HTTP call to [@url] returned [@code]. Response: @response", array(
+          '@code' => $retval->code,
+          '@response' => strip_tags($retval->body),
+          '@url' => $url
+        )));      
+      }
     }
   }
   else {

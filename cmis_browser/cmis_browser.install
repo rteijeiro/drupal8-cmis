@@ -10,5 +10,6 @@ function cmis_browser_install() {
  * Implementation of hook_uninstall()
  */
 function cmis_browser_uninstall() {
+  variable_del('cmis_browser_root');
   return;
 }

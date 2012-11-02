@@ -8,7 +8,10 @@ function _cmis_browser_content_object_from_request($repository) {
   $object_id = NULL;
   $object_path = NULL;
   $bcarray = array_slice(explode('/', $_GET['q']), 2);
-  
+  if (count($bcarray) == 0 ){
+    $bcarray = array_slice(explode('/', variable_get('cmis_browser_root')), 0);
+  }
+
   if (array_key_exists('id', $_GET)) {
     // grab objectId from GET
     $object_id = urldecode($_GET['id']);

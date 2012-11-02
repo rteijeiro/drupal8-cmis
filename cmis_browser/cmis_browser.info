@@ -3,3 +3,4 @@ description = Allows users to browse the a CMIS repository tree.
 package = CMIS
 dependencies[] = cmis
 core = "7.x"
+configure = admin/settings/cmis/browser

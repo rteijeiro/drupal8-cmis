@@ -4,7 +4,7 @@
  * Menu callback -- ask for confirmation of CMIS object deletion
  * 
  */
-function cmis_browser_content_delete_confirm(&$form_state) {
+function cmis_browser_content_delete_confirm($form, &$form_state) {
   module_load_include('api.inc', 'cmis');
   
   $cmis_objectId = urldecode($_GET['id']);

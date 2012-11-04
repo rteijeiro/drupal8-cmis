@@ -265,7 +265,7 @@ function cmis_repository_switcher_form($form, &$form_state) {
   $form['cmis_repository'] = array(
     '#type' => 'select',
     '#title' => t('CMIS repositories'),
-    '#default_value' => $_SESSION['cmis_repository'],
+    '#default_value' => isset($_SESSION['cmis_repository']) ? $_SESSION['cmis_repository'] : '',
     '#options' => $repositories 
   );
   

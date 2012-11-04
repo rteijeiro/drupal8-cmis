@@ -1,0 +1,210 @@
+diff --git a/cmis.api.inc b/cmis.api.inc
+index ee884c0..b7bc029 100644
+--- a/cmis.api.inc
++++ b/cmis.api.inc
+@@ -65,7 +65,7 @@ function cmisapi_getCheckedOutDocs($repositoryId, $options = array()) {
+  */
+ 
+ function cmisapi_getObject($repositoryId, $objectId, $options = array()) {
+-  return cmis_vendor_invoke('getObjectByPath', $repositoryId, $objectId, $options);
++  return cmis_vendor_invoke('getObject', $repositoryId, $objectId, $options);
+ }
+ 
+ function cmisapi_getObjectByPath($repositoryId, $path, $options = array()) {
+@@ -104,8 +104,8 @@ function cmisapi_getContentStream($repositoryId, $objectId, $options = array())
+   return cmis_vendor_invoke('getContentStream', $repositoryId, $objectId, $options);
+ }
+ 
+-function cmisapi_updateProperties($repositoryId, $objectId, $properties = array(), $options = array()) {
+-  return cmis_vendor_invoke('updateProperties', $repositoryId, $objectId, $properties, $options);
++function cmisapi_updateProperties($repositoryId, $objectId, $properties = array(), $options = array(), $aspects = array()) {
++  return cmis_vendor_invoke('updateProperties', $repositoryId, $objectId, $properties, $options, $aspects);
+ }
+ 
+ function cmisapi_moveObject($repositoryId, $objectId, $targetFolderId, $sourceFolderId = NULL, $options = array()) {
+diff --git a/cmis_common/lib/cmis_repository_wrapper.php b/cmis_common/lib/cmis_repository_wrapper.php
+index feb6de3..7f25836 100644
+--- a/cmis_common/lib/cmis_repository_wrapper.php
++++ b/cmis_common/lib/cmis_repository_wrapper.php
+@@ -617,7 +617,9 @@ xmlns:cmisra="http://docs.oasis-open.org/ns/cmis/restatom/200908/">
+ 		}
+ 		return $propertyContent;
+ 	}
++
+ 	
++
+ 	static function getContentEntry($content,$content_type="application/octet-stream") {
+ 		static $contentTemplate;
+ 		if (!isset($contentTemplate)) {
+@@ -782,16 +784,24 @@ xmlns:cmisra="http://docs.oasis-open.org/ns/cmis/restatom/200908/">
+ 		} else {
+ 			$hash_values=array();
+ 		}
+-		$hash_values["PROPERTIES"]=$properties_xml;
+-		$hash_values["SUMMARY"]=CMISService::getSummaryTemplate();
++
++		$fixed_hash_values = array(
++      "PROPERTIES" => $properties_xml,
++      "SUMMARY" => CMISService::getSummaryTemplate(),
++    );
++ 
++    // merge the fixes hash values first so that the processing order is correct
++    $hash_values = array_merge($fixed_hash_values, $hash_values);
++
+ 		if (!isset($hash_values['title'])) {
+ 			$hash_values['title'] = $objectName;
+ 		}
+ 		if (!isset($hash_values['summary'])) {
+ 			$hash_values['summary'] = $objectName;
+ 		}
+-		$put_value = CMISRepositoryWrapper::processTemplate($entry_template,$hash_values);
+-		$ret= $this->doPut($obj_url,$put_value,MIME_ATOM_XML_ENTRY);
++  
++    $put_value = CMISRepositoryWrapper::processTemplate($entry_template,$hash_values);  
++    $ret= $this->doPut($obj_url,$put_value,MIME_ATOM_XML_ENTRY);
+ 		$obj=$this->extractObject($ret->body);
+ 		$this->cacheEntryInfo($obj);
+   		return $obj;
+diff --git a/cmis_sync/cmis_sync.drupal.inc b/cmis_sync/cmis_sync.drupal.inc
+index a2d47c8..6b6b670 100644
+--- a/cmis_sync/cmis_sync.drupal.inc
++++ b/cmis_sync/cmis_sync.drupal.inc
+@@ -41,7 +41,6 @@ function _cmis_sync_drupal_cmis_update($node, $op) {
+         // send updates only if the current node has a CMIS reference id.
+         $result = db_query('SELECT cmis_objectId FROM {cmis_sync_node} WHERE nid = :nid', array(':nid' => $node->nid));
+         foreach($result as $row) {
+-          drupal_set_message(print_r($cmis_object, true));
+           try {
+             // updating CMIS reference object content stream
+             if ($cmis_object->content) {
+@@ -160,9 +159,10 @@ function _cmis_sync_drupal_cmis_prepare($node) {
+       $fields = field_info_instances('node', $node->type);
+       $content_field_name = $sync_map[$node->type]['content_field'];
+       if (array_key_exists($content_field_name, $fields)) {
+-        if ($fields[$content_field_name]['widget']['type'] == 'filefield') {
+-          $content_field = $node->$content_field_name;
+-          $cmis_object->properties['content-type'] = $content_field[0]['filemime'];
++        if (in_array($fields[$content_field_name]['widget']['type'], array('image_image', 'file_generic'))) {
++          $items = field_get_items('node', $node, $content_field_name);
++          $file = file_load($items[0]['fid']);
++          $cmis_object->properties['content-type'] = $file->filemime;
+         }
+       }
+     }
+@@ -199,62 +199,55 @@ function _cmis_sync_drupal_node_field_value(&$node, $field_name, $field_value =
+   
+     $fields = field_info_instances('node', $node->type);
+     $value = NULL;
+-  
+     if (array_key_exists($field_name, $fields)) {
++      
+       $content_field = $node->$field_name;
+-    
+-      switch($fields[$field_name]['widget_type']) {
+-        case 'filefield':
++      switch($fields[$field_name]['widget']['type']) {
++        case 'image_image':
++        case 'file_generic':
++        
+           if ($field_value == NULL) {
+-            if (realpath($content_field[0]['filepath'])) {
+-              $value = file_get_contents($content_field[0]['filepath']);
+-            }
++            // Get the file data
++            $items = field_get_items('node', $node, $field_name);
++            $file = file_load($items[0]['fid']);
++            $value = file_get_contents($file->uri); 
+           }
+           else {
+-            if (is_array($content_field) && is_array($content_field[0]) && array_key_exists('filepath', $content_field[0])) {
+-              // update Drupal file node on filesystem
+-              file_put_contents($content_field[0]['filepath'], $field_value);
+-            }
+-            else {
+-              // create Drupal file node on filesystem
+-              $file_context = array();
+-              if (array_key_exists('file', $context)) {
+-                $file_context = $context['file'];  
++            $items = field_get_items('node', $node, $field_name);
++
++            if (is_array($items)) {
++              // update existing file
++              $file = file_load($items[0]['fid']);
++              if (!empty($file->uri)) {
++                file_put_contents($file->uri, $field_value);
+               }
++            } else {
++               
++              $field_info = field_info_field($field_name);
++              $instance_info = field_info_instance('node', $field_name, $node->type);
++              $path = $field_info['settings']['uri_scheme'] . '://';
+               
+-              // merge in defaults
+-              $file_context += array(
+-                'id' => uniqid('cmis_sync_'),
+-                'mime' => 'text/html'
+-              );
+-              
+-              // create file
+-              $file_drupal_path = file_directory_path(). '/' .$file_context['id'];
+-              file_put_contents($file_drupal_path, $field_value);
+-              
+-              // create file field
+-              $file = new stdClass();
+-              $file->filename = basename($file_drupal_path);
+-              $file->filepath = $file_drupal_path;
+-              $file->filemime = $file_context['mime'];
+-              $file->filesize = filesize($file_drupal_path);              
+-              $file->status = FILE_STATUS_PERMANENT;
+-              $file->timestamp = time();
+-              drupal_write_record('files', $file);
+-              
+-              // create new filefield
+-              $node->$field_name = array(array(
+-                'fid' => $file->fid,
+-                'filename' => $file->filename,
+-                'filepath' => $file->filepath,
+-                'filesize' => $file->filesize,
+-                'filemime' => $file->filemime,
+-                'list' => 1,
+-              ));
++              if (strlen($instance_info['settings']['file_directory']) > 0) {
++                // Set up and create path if it is not already set up
++                $path .= $instance_info['settings']['file_directory'] . '/';
++                if (!is_dir($path)) {
++                  drupal_mkdir($path, NULL, TRUE);
++                }
++              }
++
++              // add an image 
++              $filename = $path . uniqid('cmis_sync_');
++              $file = file_save_data($field_value, $filename);
++              if ($file) {
++
++                $file->display = 1;
+               
+-            }
++                $node->{$field_name}[LANGUAGE_NONE][0] = (array)$file;
++              }
++            }   
+           }
+           break;
++
+         case 'text':
+         case 'text_textarea_with_summary':
+         case 'date':
+@@ -274,7 +267,7 @@ function _cmis_sync_drupal_node_field_value(&$node, $field_name, $field_value =
+         default:
+           throw new CMISException(t('Unsupported sync drupal content field type [@field_type] for field [@field_name]. Please review your configuration.', array(
+             '@field_name' => $field_name,
+-            '@field_type' => $content_type['fields'][$field_name]['type']
++            '@field_type' => $fields[$field_name]['widget']['type']    
+           )));
+           break;
+       }
+@@ -295,3 +288,5 @@ function _cmis_sync_drupal_node_field_value(&$node, $field_name, $field_value =
+     return NULL;
+   }
+ }
++
++

@@ -65,7 +65,7 @@ function cmisapi_getCheckedOutDocs($repositoryId, $options = array()) {
  */
 
 function cmisapi_getObject($repositoryId, $objectId, $options = array()) {
-  return cmis_vendor_invoke('getObjectByPath', $repositoryId, $objectId, $options);
+  return cmis_vendor_invoke('getObject', $repositoryId, $objectId, $options);
 }
 
 function cmisapi_getObjectByPath($repositoryId, $path, $options = array()) {
@@ -104,8 +104,8 @@ function cmisapi_getContentStream($repositoryId, $objectId, $options = array()) 
   return cmis_vendor_invoke('getContentStream', $repositoryId, $objectId, $options);
 }
 
-function cmisapi_updateProperties($repositoryId, $objectId, $properties = array(), $options = array()) {
-  return cmis_vendor_invoke('updateProperties', $repositoryId, $objectId, $properties, $options);
+function cmisapi_updateProperties($repositoryId, $objectId, $properties = array(), $options = array(), $aspects = array()) {
+  return cmis_vendor_invoke('updateProperties', $repositoryId, $objectId, $properties, $options, $aspects);
 }
 
 function cmisapi_moveObject($repositoryId, $objectId, $targetFolderId, $sourceFolderId = NULL, $options = array()) {

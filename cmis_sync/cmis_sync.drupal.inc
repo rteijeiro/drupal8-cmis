@@ -41,15 +41,14 @@ function _cmis_sync_drupal_cmis_update($node, $op) {
         // send updates only if the current node has a CMIS reference id.
         $result = db_query('SELECT cmis_objectId FROM {cmis_sync_node} WHERE nid = :nid', array(':nid' => $node->nid));
         foreach($result as $row) {
-          drupal_set_message(print_r($cmis_object, true));
           try {
             // updating CMIS reference object content stream
             if ($cmis_object->content) {
-              cmisapi_setContentStream($cmis_object->repositoryId, $row->cmis_objectid, $cmis_object->content, $cmis_object->contentStreamMimeType);
+              cmisapi_setContentStream($cmis_object->repositoryId, $row->cmis_objectId, $cmis_object->content, $cmis_object->contentStreamMimeType);
             }
 
             // updating CMIS properties
-            cmisapi_updateProperties($cmis_object->repositoryId, $row->cmis_objectid, $cmis_object->properties);
+            cmisapi_updateProperties($cmis_object->repositoryId, $row->cmis_objectId, $cmis_object->properties);
             
             // update changed timestamp 
             db_query('UPDATE {cmis_sync_node} SET changed_timestamp = :changed WHERE nid = :nid', 
@@ -160,9 +159,10 @@ function _cmis_sync_drupal_cmis_prepare($node) {
       $fields = field_info_instances('node', $node->type);
       $content_field_name = $sync_map[$node->type]['content_field'];
       if (array_key_exists($content_field_name, $fields)) {
-        if ($fields[$content_field_name]['widget']['type'] == 'filefield') {
-          $content_field = $node->$content_field_name;
-          $cmis_object->properties['content-type'] = $content_field[0]['filemime'];
+        if (in_array($fields[$content_field_name]['widget']['type'], array('image_image', 'file_generic'))) {
+          $items = field_get_items('node', $node, $content_field_name);
+          $file = file_load($items[0]['fid']);
+          $cmis_object->properties['content-type'] = $file->filemime;
         }
       }
     }
@@ -199,62 +199,55 @@ function _cmis_sync_drupal_node_field_value(&$node, $field_name, $field_value = 
   
     $fields = field_info_instances('node', $node->type);
     $value = NULL;
-  
     if (array_key_exists($field_name, $fields)) {
+      
       $content_field = $node->$field_name;
-    
-      switch($fields[$field_name]['widget_type']) {
-        case 'filefield':
+      switch($fields[$field_name]['widget']['type']) {
+        case 'image_image':
+        case 'file_generic':
+        
           if ($field_value == NULL) {
-            if (realpath($content_field[0]['filepath'])) {
-              $value = file_get_contents($content_field[0]['filepath']);
-            }
+            // Get the file data
+            $items = field_get_items('node', $node, $field_name);
+            $file = file_load($items[0]['fid']);
+            $value = file_get_contents($file->uri); 
           }
           else {
-            if (is_array($content_field) && is_array($content_field[0]) && array_key_exists('filepath', $content_field[0])) {
-              // update Drupal file node on filesystem
-              file_put_contents($content_field[0]['filepath'], $field_value);
-            }
-            else {
-              // create Drupal file node on filesystem
-              $file_context = array();
-              if (array_key_exists('file', $context)) {
-                $file_context = $context['file'];  
+            $items = field_get_items('node', $node, $field_name);
+
+            if (is_array($items)) {
+              // update existing file
+              $file = file_load($items[0]['fid']);
+              if (!empty($file->uri)) {
+                file_put_contents($file->uri, $field_value);
               }
+            } else {
+               
+              $field_info = field_info_field($field_name);
+              $instance_info = field_info_instance('node', $field_name, $node->type);
+              $path = $field_info['settings']['uri_scheme'] . '://';
               
-              // merge in defaults
-              $file_context += array(
-                'id' => uniqid('cmis_sync_'),
-                'mime' => 'text/html'
-              );
+              if (strlen($instance_info['settings']['file_directory']) > 0) {
+                // Set up and create path if it is not already set up
+                $path .= $instance_info['settings']['file_directory'] . '/';
+                if (!is_dir($path)) {
+                  drupal_mkdir($path, NULL, TRUE);
+                }
+              }
+
+              // add an image 
+              $filename = $path . uniqid('cmis_sync_');
+              $file = file_save_data($field_value, $filename);
+              if ($file) {
+
+                $file->display = 1;
               
-              // create file
-              $file_drupal_path = file_directory_path(). '/' .$file_context['id'];
-              file_put_contents($file_drupal_path, $field_value);
-              
-              // create file field
-              $file = new stdClass();
-              $file->filename = basename($file_drupal_path);
-              $file->filepath = $file_drupal_path;
-              $file->filemime = $file_context['mime'];
-              $file->filesize = filesize($file_drupal_path);              
-              $file->status = FILE_STATUS_PERMANENT;
-              $file->timestamp = time();
-              drupal_write_record('files', $file);
-              
-              // create new filefield
-              $node->$field_name = array(array(
-                'fid' => $file->fid,
-                'filename' => $file->filename,
-                'filepath' => $file->filepath,
-                'filesize' => $file->filesize,
-                'filemime' => $file->filemime,
-                'list' => 1,
-              ));
-              
-            }
+                $node->{$field_name}[LANGUAGE_NONE][0] = (array)$file;
+              }
+            }   
           }
           break;
+
         case 'text':
         case 'text_textarea_with_summary':
         case 'date':
@@ -269,12 +262,18 @@ function _cmis_sync_drupal_node_field_value(&$node, $field_name, $field_value = 
           else {
             $node->$field_name = array();
             $node->{$field_name}['und'][0]['value'] = $field_value;
+            
+            /* TODO - Should not be hard coded */
+            if ($field_name == 'body'){
+	          $node->{$field_name}['und'][0]['format'] = 'full_html';
+            }
+
           }
           break;
         default:
           throw new CMISException(t('Unsupported sync drupal content field type [@field_type] for field [@field_name]. Please review your configuration.', array(
             '@field_name' => $field_name,
-            '@field_type' => $content_type['fields'][$field_name]['type']
+            '@field_type' => $fields[$field_name]['widget']['type']    
           )));
           break;
       }
@@ -282,7 +281,7 @@ function _cmis_sync_drupal_node_field_value(&$node, $field_name, $field_value = 
     else {
       // regular node field value
       if ($field_value == NULL) {
-        $value = $node->$field_name;
+        $value = $node->{$field_name};
       }
       else {
         $node->$field_name = $field_value;
@@ -295,3 +294,5 @@ function _cmis_sync_drupal_node_field_value(&$node, $field_name, $field_value = 
     return NULL;
   }
 }
+
+

@@ -418,9 +418,9 @@ class CMISService extends CMISRepositoryWrapper {
 		return $obj->properties["cmis:name"];
 	}	
 	function getLink($objectId,$linkName) {
-		if ($this->_link_cache[$objectId][$linkName]) {
-			return $this->_link_cache[$objectId][$linkName];
-		}
+		if (array_key_exists($objectId, $this->_link_cache)) {
+          return $this->_link_cache[$objectId][$linkName];
+        }
 		$obj=$this->getObject($objectId);
 		return $obj->links[$linkName];
 	}
@@ -617,7 +617,9 @@ xmlns:cmisra="http://docs.oasis-open.org/ns/cmis/restatom/200908/">
 		}
 		return $propertyContent;
 	}
+
 	
+
 	static function getContentEntry($content,$content_type="application/octet-stream") {
 		static $contentTemplate;
 		if (!isset($contentTemplate)) {
@@ -782,16 +784,24 @@ xmlns:cmisra="http://docs.oasis-open.org/ns/cmis/restatom/200908/">
 		} else {
 			$hash_values=array();
 		}
-		$hash_values["PROPERTIES"]=$properties_xml;
-		$hash_values["SUMMARY"]=CMISService::getSummaryTemplate();
+
+		$fixed_hash_values = array(
+      "PROPERTIES" => $properties_xml,
+      "SUMMARY" => CMISService::getSummaryTemplate(),
+    );
+ 
+    // merge the fixes hash values first so that the processing order is correct
+    $hash_values = array_merge($fixed_hash_values, $hash_values);
+
 		if (!isset($hash_values['title'])) {
 			$hash_values['title'] = $objectName;
 		}
 		if (!isset($hash_values['summary'])) {
 			$hash_values['summary'] = $objectName;
 		}
-		$put_value = CMISRepositoryWrapper::processTemplate($entry_template,$hash_values);
-		$ret= $this->doPut($obj_url,$put_value,MIME_ATOM_XML_ENTRY);
+  
+    $put_value = CMISRepositoryWrapper::processTemplate($entry_template,$hash_values);  
+    $ret= $this->doPut($obj_url,$put_value,MIME_ATOM_XML_ENTRY);
 		$obj=$this->extractObject($ret->body);
 		$this->cacheEntryInfo($obj);
   		return $obj;

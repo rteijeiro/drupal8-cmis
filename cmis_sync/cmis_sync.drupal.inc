@@ -200,7 +200,9 @@ function _cmis_sync_drupal_node_field_value(&$node, $field_name, $field_value = 
     $fields = field_info_instances('node', $node->type);
     $value = NULL;
     if (array_key_exists($field_name, $fields)) {
-      $content_field = $node->{$field_name};
+      if ($field_name != NULL){
+        $content_field = $node->{$field_name};
+      }
       switch($fields[$field_name]['widget']['type']) {
         case 'image_image':
         case 'file_generic':

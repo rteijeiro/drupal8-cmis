@@ -62,7 +62,8 @@ function cmis_common_cmis_invoke($url, $properties, $settings, $dry_run = FALSE)
 
   if (isset($settings['user'])) {
     curl_setopt($session, CURLOPT_USERPWD, $settings['user'] . ":" . $settings['password']);
-  }else if(isset($_COOKIE["alf_access_token"])) {
+  }else if($_COOKIE["alf_access_token"] != NULL) {
+    // TODO - Generic OAuth support
     $properties['headers']['Authorization'] = 'Bearer '. $_COOKIE["alf_access_token"];
   }
   // Need to check that the Alfresco Cloud Module is enabled.

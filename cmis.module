@@ -211,7 +211,9 @@ class CMISException extends Exception {
  */
 function cmis_error_handler($type, $e) {
   watchdog($type, $e->getMessage(), NULL, WATCHDOG_ERROR);
-  drupal_set_message($e->getMessage(), 'error');
+  // Do we really want end users to see error returned from the CMIS server?
+  //drupal_set_message($e->getMessage(), 'error');
+  drupal_set_message(t("There has been an problem contacting the CMIS server, please see the logs."), 'error');
 }
 
 /**

@@ -36,8 +36,8 @@ function cmisapi_getObjectTypeDefinition($repositoryId, $objectId) {
 /*
  * Navigation servicies
  */
-function cmisapi_getFolderTree($repositoryId) {
-  return cmis_vendor_invoke('getFolderTree', $repositoryId);
+function cmisapi_getFolderTree($repositoryId, $folderId, $depth, $options = array()) {
+  return cmis_vendor_invoke('getFolderTree', $repositoryId, $folderId, $depth, $options);
 }
 
 function cmisapi_getDescendants($repositoryId, $folderId) {

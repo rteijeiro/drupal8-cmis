@@ -734,13 +734,17 @@ xmlns:cmisra="http://docs.oasis-open.org/ns/cmis/restatom/200908/">
 		if ($content) {
 			$hash_values["CONTENT"]=CMISService::getContentEntry($content,$content_type);
 		}
+		
+		debug(preg_replace("/[^A-Za-z0-9\s.&; ]/", '', htmlentities($objectName)));
 		if (!isset($hash_values['title'])) {
-			$hash_values['title'] = $objectName;
+			$hash_values['title'] = preg_replace("/[^A-Za-z0-9\s.&; ]/", '', htmlentities($objectName));
 		}
+		
 		if (!isset($hash_values['summary'])) {
-			$hash_values['summary'] = $objectName;
+			$hash_values['summary'] = preg_replace("/[^A-Za-z0-9\s.&; ]/", '', htmlentities($objectName));
 		}
 		$post_value = CMISRepositoryWrapper::processTemplate($entry_template,$hash_values);
+
 		$ret = $this->doPost($myURL,$post_value,MIME_ATOM_XML_ENTRY);
 		// print "DO_POST\n";
 		// print_r($ret);

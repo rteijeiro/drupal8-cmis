@@ -129,6 +129,14 @@ function cmis_invoke($repositry_id, $url = '', $properties = array()) {
   $cmis_repository = cmis_get_repository((string) $repositry_id);
   $cmis_transport = $cmis_repository->settings['transport'];
 
+  foreach (module_implements('cmis_invoke') as $module) {
+    //Determine which module to use and change the cmis_transport mechanism from the default set in cmis_get_repository
+    if($module != $cmis_transport){
+	    $cmis_transport = $module;
+	    break;
+    }
+  }
+
   // invoke hook_cmis()
   if (module_exists($cmis_transport)) {
     return module_invoke($cmis_transport, 'cmis_invoke', $url, $properties, $cmis_repository->settings);  

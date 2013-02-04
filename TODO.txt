@@ -1,0 +1,3 @@
+/* TODO - Configuration options */
+
+cmis_sync.drupal.inc - line 268 - Setting format of fields should be done at the field mapping level, not hard coded.

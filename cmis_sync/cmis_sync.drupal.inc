@@ -201,6 +201,7 @@ function _cmis_sync_drupal_node_field_value(&$node, $field_name, $field_value = 
     $value = NULL;
     if (array_key_exists($field_name, $fields)) {
       if ($field_name != NULL){
+        $node->$field_name = array();
         $content_field = $node->{$field_name};
       }
       switch($fields[$field_name]['widget']['type']) {
@@ -251,6 +252,16 @@ function _cmis_sync_drupal_node_field_value(&$node, $field_name, $field_value = 
 
         case 'text':
         case 'text_textarea_with_summary':
+          debug($fields[$field_name]['widget']['type'].' textarea');
+          if ($field_value == NULL) {
+            $value = $content_field['und'][0]['value'];
+          }
+          else {
+            $node->$field_name = array();
+            $node->{$field_name}['und'][0]['value'] = $field_value;
+            $node->{$field_name}['und'][0]['format'] = 'filtered_html';
+          }
+          break;
         case 'date':
         case 'datestamp':
         case 'datetime':
@@ -263,12 +274,6 @@ function _cmis_sync_drupal_node_field_value(&$node, $field_name, $field_value = 
           else {
             $node->$field_name = array();
             $node->{$field_name}['und'][0]['value'] = $field_value;
-            
-            /* TODO - Should not be hard coded */
-            if ($field_name == 'body'){
-	          $node->{$field_name}['und'][0]['format'] = 'full_html';
-            }
-
           }
           break;
         default:

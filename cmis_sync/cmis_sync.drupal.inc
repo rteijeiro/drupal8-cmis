@@ -201,8 +201,9 @@ function _cmis_sync_drupal_node_field_value(&$node, $field_name, $field_value = 
     $value = NULL;
     if (array_key_exists($field_name, $fields)) {
       if ($field_name != NULL){
-        $node->$field_name = array();
-        $content_field = $node->{$field_name};
+        if (isset($node->{$field_name})){
+          $content_field = $node->{$field_name};
+        }
       }
       switch($fields[$field_name]['widget']['type']) {
         case 'image_image':
@@ -252,7 +253,6 @@ function _cmis_sync_drupal_node_field_value(&$node, $field_name, $field_value = 
 
         case 'text':
         case 'text_textarea_with_summary':
-          debug($fields[$field_name]['widget']['type'].' textarea');
           if ($field_value == NULL) {
             $value = $content_field['und'][0]['value'];
           }

@@ -216,6 +216,24 @@ class CMISRepositoryWrapper {
 			  @$retval->properties[$pn->attributes->getNamedItem("propertyDefinitionId")->nodeValue] = $pn->getElementsByTagName("value")->item(0)->nodeValue;
 			}
 		}
+		
+		$properties = $xmlnode->getElementsByTagName("object")->item(0)->getElementsByTagName("properties")->item(0);
+		// hack in Alfresco Aspect Properties
+        if ($properties->getElementsByTagName("aspects")->item(0)) {
+          $alf_prop_nodes = $properties->getElementsByTagName("aspects")->item(0)->getElementsByTagName("properties")->item(0)->childNodes;
+          foreach ($alf_prop_nodes as $pn) {
+            if ($pn->attributes) {
+              $item = $pn->attributes->getNamedItem("propertyDefinitionId");
+              if ($item) {
+                $first = $pn->getElementsByTagName("value")->item(0);
+                if ($first) {
+                  $retval->properties[$item->nodeValue] = $first->nodeValue;
+                }
+              }
+            }
+          }
+        }
+        
         $retval->uuid=$xmlnode->getElementsByTagName("id")->item(0)->nodeValue;
         $retval->id=$retval->properties["cmis:objectId"];
         return $retval;

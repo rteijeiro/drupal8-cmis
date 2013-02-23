@@ -140,7 +140,7 @@ function _cmis_sync_cmis_drupal_handle_deletes($repository, $sync_map_type, $nod
     
   foreach ($sync_nodes as $sync_node) {
     if (node_load($sync_node->nid)->type == $node_type) {
-      $cmis_nodes[$sync_node->cmis_objectid] = $sync_node->nid;
+      $cmis_nodes[$sync_node->cmis_objectId] = $sync_node->nid;
     }
   }
 

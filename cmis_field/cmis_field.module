@@ -2,7 +2,7 @@
 
 /**
  * Implementation of hook_field_info()
- * 
+ *
  * @return array - field definition
  */
 function cmis_field_field_info() {
@@ -12,7 +12,7 @@ function cmis_field_field_info() {
       'description' => t('Attach a CMIS object to a Drupal entity'),
       'default_widget' => 'cmis_field_widget',
       'default_formatter' => 'cmis_field_link',
-      'instance settings' => array('cmis_field_rootFolderPath' => ''), 
+      'instance settings' => array('cmis_field_rootFolderPath' => ''),
     )
   );
 }
@@ -37,7 +37,7 @@ function cmis_field_field_validate($entity_type, $entity, $field, $instance, $la
 
 /**
  * Implementation of hook_is_empty()
- * 
+ *
  * @param $item - field value(s)
  * @param $field - field settings
  * @return boolean - TRUE/FALSE
@@ -48,31 +48,31 @@ function cmis_field_field_is_empty($item, $field) {
 
 /**
  * Implementation of hook_instance_settings_form()
- * 
+ *
  * @param $op - operation
  * @param $field - field beign operated on
  * @return - form or settings array dependent on operation
  */
 function cmis_field_field_instance_settings_form($field, $instance) {
   $settings = $instance['settings'];
-  
+
   $form['cmis_field_rootFolderPath'] = array(
     '#title' => t('Root Directory'),
     '#description' => t('Root folder for CMIS nodes'),
     '#type' => 'textfield',
-    '#default_value' => isset($settings['cmis_field_rootFolderPath']),
+    '#default_value' => isset($settings['cmis_field_rootFolderPath']) ? $settings['cmis_field_rootFolderPath'] : '',
   );
-  
+
   $form['#attached']['js'] = array(
     array('data' => drupal_get_path('module', 'cmis_field') . '/js/cmis_field.js'),
   );
-  
+
   return $form;
 }
 
 /**
  * Implementation of hook_field_widget_info
- * 
+ *
  * @return array defining the widget
  */
 function cmis_field_field_widget_info() {
@@ -80,7 +80,7 @@ function cmis_field_field_widget_info() {
     'cmis_field_browser' => array(
       'label' => t('CMIS link'),
       'field types' => array('cmis_field_path'),
-      //'settings' => array('cmis_field_rootFolderPath' => array()),
+      'settings' => array('cmis_field_rootFolderPath' => array()),
     )
   );
 }
@@ -88,9 +88,9 @@ function cmis_field_field_widget_info() {
 
 /**
  * Implementation of hook_field_widget_form()
- * 
+ *
  * @param $element - the form element array
- * @param $edit - 
+ * @param $edit -
  * @param $form_state - form state array
  * @param $form - form array
  * @return array - form element
@@ -108,38 +108,40 @@ function cmis_field_field_widget_form(&$form, &$form_state, $field, $instance, $
     '#type' => 'textfield',
     '#default_value' => $title,
     '#attributes' => array('class' => array('edit-field-cmis-field')),
+    '#title_display' => 'before',
+    '#title' => check_plain($instance['label']),
   );
+
   $element['path'] += array(
     '#type' => 'hidden',
     '#attributes' => array('class' => array('edit-field-cmis-path', 'search-form')),
     '#default_value' => $path,
   );
-  
+
   $element['#attached']['js'] = array(
     array('data' => drupal_get_path('module', 'cmis_field') . '/js/cmis_field.js'),
-    array('data' => array('cmispath' => isset($instance['settings']['cmis_field_rootFolderPath'])), 'type' => 'setting'),
+    array('data' => array('cmispath' => $instance['settings']['cmis_field_rootFolderPath']), 'type' => 'setting'),
   );
   return $element;
 }
 
 /**
  * Implementation of hook_field_formatter_info()
- * 
+ *
  * @return array
  */
 function cmis_field_field_formatter_info() {
-  return array( 
-    'cmis_field_link' => array( 
+  return array(
+    'cmis_field_link' => array(
        'label' => t('CMIS browser'),
        'field types' => array('cmis_field_path')
     )
   );
 }
 
-
 /**
  * Implements hook_field_formatter_view().
- * 
+ *
  */
 
 function cmis_field_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {

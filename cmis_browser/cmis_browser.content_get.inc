@@ -54,7 +54,7 @@ function _cmis_browser_content_get_document($repository, $object) {
   }
 
   drupal_add_http_header('Cache-Control', 'no-cache, must-revalidate');
-  drupal_add_http_header('Content-type:', $object->properties['cmis:contentStreamMimeType']);
+  drupal_add_http_header('Content-type', $object->properties['cmis:contentStreamMimeType']);
   if ($object->properties['cmis:contentStreamMimeType'] != 'text/html') {
     drupal_add_http_header('Content-Disposition', 'attachment; filename="'. $object->properties['cmis:name'] .'"');  
   }

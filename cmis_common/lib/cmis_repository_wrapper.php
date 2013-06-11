@@ -69,6 +69,7 @@ class CMISRepositoryWrapper {
 	}
 
 	function doRequest($url,$method="GET",$content=null,$contentType=null,$charset=null) {
+	    debug('are we getting here');
 		// Process the HTTP request
 		// 'til now only the GET request has been tested
 		// Does not URL encode any inputs yet
@@ -495,8 +496,7 @@ class CMISService extends CMISRepositoryWrapper {
 
 	function getChildren($objectId,$options=array()) {
 		$myURL = $this->getLink($objectId,"down");
-		//TODO: Need GenURLQueryString Utility
-		$ret=$this->doGet($myURL);
+		$ret=$this->doGet($myURL.'?'.urldecode(http_build_query($options)));
 		$objs=$this->extractObjectFeed($ret->body);
 		$this->cacheFeedInfo($objs);
 		return $objs;
@@ -753,7 +753,6 @@ xmlns:cmisra="http://docs.oasis-open.org/ns/cmis/restatom/200908/">
 			$hash_values["CONTENT"]=CMISService::getContentEntry($content,$content_type);
 		}
 		
-		debug(preg_replace("/[^A-Za-z0-9\s.&; ]/", '', htmlentities($objectName)));
 		if (!isset($hash_values['title'])) {
 			$hash_values['title'] = preg_replace("/[^A-Za-z0-9\s.&; ]/", '', htmlentities($objectName));
 		}

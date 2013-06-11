@@ -68,7 +68,7 @@ function _cmis_sync_drupal_cmis_update($node, $op) {
           foreach ($result as $row) {        
             try {
               // delete CMIS reference object content
-              $cmis_object_properties = cmisapi_getProperties($cmis_object->repositoryId, $row->cmis_objectid);
+              $cmis_object_properties = cmisapi_getProperties($cmis_object->repositoryId, $row->cmis_objectId);
               cmisapi_deleteObject($cmis_object->repositoryId, $cmis_object_properties->id);
               
               // delete sync refs 

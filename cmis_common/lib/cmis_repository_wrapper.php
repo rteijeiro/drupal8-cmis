@@ -496,7 +496,7 @@ class CMISService extends CMISRepositoryWrapper {
 
 	function getChildren($objectId,$options=array()) {
 		$myURL = $this->getLink($objectId,"down");
-		$ret=$this->doGet($myURL.'?'.urldecode(http_build_query($options)));
+		$ret = $this->doGet($myURL.'?'.urldecode(http_build_query($options)));
 		$objs=$this->extractObjectFeed($ret->body);
 		$this->cacheFeedInfo($objs);
 		return $objs;
@@ -504,8 +504,7 @@ class CMISService extends CMISRepositoryWrapper {
 
 	function getFolderParent($objectId,$options=array()) { //yes
 		$myURL = $this->getLink($objectId,"up");
-		//TODO: Need GenURLQueryString Utility
-		$ret=$this->doGet($myURL);
+		$ret=$this->doGet($myURL.'?'.urldecode(http_build_query($options)));
 		$obj=$this->extractObjectEntry($ret->body);
 		$this->cacheEntryInfo($obj);
 		return $obj;
@@ -513,8 +512,7 @@ class CMISService extends CMISRepositoryWrapper {
 
 	function getObjectParents($objectId,$options=array()) { // yes
 		$myURL = $this->getLink($objectId,"up");
-		//TODO: Need GenURLQueryString Utility
-		$ret=$this->doGet($myURL);
+		$ret = $this->doGet($myURL.'?'.urldecode(http_build_query($options)));
 		$objs=$this->extractObjectFeed($ret->body);
 		$this->cacheFeedInfo($objs);
 		return $objs;
@@ -522,7 +520,7 @@ class CMISService extends CMISRepositoryWrapper {
 
 	function getCheckedOutDocs($options=array()) {
  		$obj_url = $this->workspace->collections['checkedout'];
-		$ret = $this->doGet($obj_url);
+		$ret = $this->doGet($myURL.'?'.urldecode(http_build_query($options)));
 		$objs=$this->extractObjectFeed($ret->body);
 		$this->cacheFeedInfo($objs);
 		return $objs;

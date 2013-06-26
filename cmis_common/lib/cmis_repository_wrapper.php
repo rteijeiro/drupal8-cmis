@@ -69,7 +69,6 @@ class CMISRepositoryWrapper {
 	}
 
 	function doRequest($url,$method="GET",$content=null,$contentType=null,$charset=null) {
-	    debug('are we getting here');
 		// Process the HTTP request
 		// 'til now only the GET request has been tested
 		// Does not URL encode any inputs yet
@@ -209,6 +208,7 @@ class CMISRepositoryWrapper {
 		// RRM -- NEED TO ADD ALLOWABLEACTIONS
 		$retval = new stdClass();
 		$retval->links=CMISRepositoryWrapper::getLinksArray($xmlnode);
+		$retval->renditions=array();
         $retval->properties=array();
 		$prop_nodes = $xmlnode->getElementsByTagName("object")->item(0)->getElementsByTagName("properties")->item(0)->childNodes;
 		foreach ($prop_nodes as $pn) {
@@ -217,6 +217,22 @@ class CMISRepositoryWrapper {
 			  @$retval->properties[$pn->attributes->getNamedItem("propertyDefinitionId")->nodeValue] = $pn->getElementsByTagName("value")->item(0)->nodeValue;
 			}
 		}
+		$renditions = $xmlnode->getElementsByTagName("object")->item(0)->getElementsByTagName("rendition");
+		$renditionArray = array();
+		// Add renditions to CMIS object
+		$i = 0;
+		if($renditions->length > 0){
+		  foreach ($renditions as $rendition) {
+		    $rend_nodes = $rendition->childNodes;
+            foreach ($rend_nodes as $rend){
+              if ($rend->localName != NULL){
+	            $renditionArray[$i][$rend->localName] = $rend->nodeValue;
+              }
+            }
+            $i++;        
+	      }
+		}
+		$retval->renditions = $renditionArray;
 		
 		$properties = $xmlnode->getElementsByTagName("object")->item(0)->getElementsByTagName("properties")->item(0);
 		// hack in Alfresco Aspect Properties

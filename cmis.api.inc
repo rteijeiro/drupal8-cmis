@@ -92,7 +92,7 @@ function cmisapi_getAllowableActions($repositoryId, $objectId, $options = array(
   return cmis_vendor_invoke('getAllowableActions', $repositoryId, $objectId, $options);
 }
 
-function cmisapi_getRenditions($repositoryId, $objectId, $options = array('renditionFilter' => "*")) {
+function cmisapi_getRenditions($repositoryId, $objectId, $options = array()) {
   return cmis_vendor_invoke('getProperties', $repositoryId, $objectId, $options);
 }
 

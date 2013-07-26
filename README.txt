@@ -244,6 +244,7 @@ Credits
   - Dave Gynn (dgynn@optaros.com)
   - Chris Fuller (cfuller@optaros.com)
   - Rich McKnight (rich.mcknight@alfresco.com)
+  - Ian Norton (ian.norton@alfresco.com)
 
  Maintainers
   - Catalin Balan (cbalan@optaros.com)

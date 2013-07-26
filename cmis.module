@@ -7,7 +7,7 @@
  *  $conf['cmis_repositories'] = array(
  *    'default' => array (
  *      'label' => 'Local',
- *      'url' => 'http://127.0.0.1:8080/alfresco/s/cmis',
+ *      'url' => 'http://127.0.0.1:8080/alfresco/cmisatom',
  *      'transport' => 'cmis_headerswing', 
  *      'headerswing_headers' => array (
  *        // headers copied from $_SERVER[] to CMIS repository curl call
@@ -23,7 +23,7 @@
  *      'label' => 'cmis.alfresco.com',
  *      'user' => 'admin',
  *      'password' => 'admin',
- *      'url' => 'http://cmis.alfresco.com/s/cmis'
+ *      'url' => 'http://cmis.alfresco.com/cmisatom'
  *    ),
  *    
  *    'demo cmis nuxeo' => array(

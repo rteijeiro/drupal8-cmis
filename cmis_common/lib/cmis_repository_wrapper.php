@@ -512,7 +512,10 @@ class CMISService extends CMISRepositoryWrapper {
 
 	function getChildren($objectId,$options=array()) {
 		$myURL = $this->getLink($objectId,"down");
-		$ret = $this->doGet($myURL.'&'.urldecode(http_build_query($options)));
+        if (count($options) > 0) {
+          $myURL.= '&'.urldecode(http_build_query($options));
+        }
+        $ret = $this->doGet($myURL);
 		$objs=$this->extractObjectFeed($ret->body);
 		$this->cacheFeedInfo($objs);
 		return $objs;
@@ -520,24 +523,33 @@ class CMISService extends CMISRepositoryWrapper {
 
 	function getFolderParent($objectId,$options=array()) { //yes
 		$myURL = $this->getLink($objectId,"up");
-		$ret=$this->doGet($myURL.'&'.urldecode(http_build_query($options)));
-		$obj=$this->extractObjectEntry($ret->body);
+        if (count($options) > 0) {
+          $myURL.= '&'.urldecode(http_build_query($options));
+        }
+        $ret = $this->doGet($myURL);
+        $obj=$this->extractObjectEntry($ret->body);
 		$this->cacheEntryInfo($obj);
 		return $obj;
 	}
 
 	function getObjectParents($objectId,$options=array()) { // yes
 		$myURL = $this->getLink($objectId,"up");
-		$ret = $this->doGet($myURL.'&'.urldecode(http_build_query($options)));
-		$objs=$this->extractObjectFeed($ret->body);
+        if (count($options) > 0) {
+          $myURL.= '&'.urldecode(http_build_query($options));
+        }
+        $ret = $this->doGet($myURL);
+        $objs=$this->extractObjectFeed($ret->body);
 		$this->cacheFeedInfo($objs);
 		return $objs;
 	}
 
 	function getCheckedOutDocs($options=array()) {
  		$obj_url = $this->workspace->collections['checkedout'];
-		$ret = $this->doGet($myURL.'&'.urldecode(http_build_query($options)));
-		$objs=$this->extractObjectFeed($ret->body);
+        if (count($options) > 0) {
+          $myURL.= '&'.urldecode(http_build_query($options));
+        }
+        $ret = $this->doGet($myURL);
+   	    $objs=$this->extractObjectFeed($ret->body);
 		$this->cacheFeedInfo($objs);
 		return $objs;
 	}

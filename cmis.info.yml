@@ -1,0 +1,6 @@
+name: CMIS
+package: CMIS
+type: module
+description: CMIS implementation for interacting with a CMIS compliant repository
+core: 8.x
+version: VERSION

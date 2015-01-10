@@ -1,0 +1,10 @@
+services:
+  cmis.subscriber:
+    class: Drupal\cmis\CmisSubscriber
+    tags:
+      - { name: 'event_subscriber' }
+  cmis.module:
+    class: Drupal\cmis\Cmis
+  cmis.api:
+    class: Drupal\cmis\Api
+

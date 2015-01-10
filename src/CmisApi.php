@@ -3,20 +3,113 @@
 /**
  * @file
  * Contains \Drupal\cmis\Api.
+ * @todo Document this class.
  */
 
 namespace Drupal\cmis;
 
 /**
- * Repository services.
+ * CMIS Api definition.
  */
 class Api {
 
-  // @todo Document this class.
   protected $cmisModule = null;
 
+  /**
+   * Repository services.
+   */
   public function __construct() {
+    // @todo There is no need of this service now.
     $this->cmisModule = \Drupal::service("cmis.module");
+  }
+
+  /**
+   * @todo Check if this method applies here.
+   */
+  public function invoke($repositry_id, $url = '', $properties = array()) {
+    // Merge in defaults.
+    $properties += array(
+      'headers' => array(),
+      'method' => 'GET',
+      'data' => NULL,
+      'retry' => 3,
+    );
+
+    $cmis_repository = cmis_get_repository((string) $repositry_id);
+
+    // If the conf array has specified a transport, then we should use that and not look for modules implementing cmis_invoke.
+    $cmis_transport = $cmis_repository->settings['transport'];
+
+    // If the default is in use, check that another module isn't implementing cmis_invoke.
+    if ($cmis_transport == 'cmis_common') {
+      foreach (\Drupal::moduleHandler()->getImplementations('cmis_invoke') as $module) {
+        // Determine which module to use and change the cmis_transport mechanism from the default set in cmis_get_repository.
+        if ($module != $cmis_transport) {
+          $cmis_transport = $module;
+          break;
+        }
+      }
+    }
+
+    // Invoke hook_cmis().
+    if (module_exists($cmis_transport)) {
+      return \Drupal::moduleHandler()->invoke($cmis_transport, 'cmis_invoke', $url, $properties, $cmis_repository->settings);
+    }
+    else {
+      throw new CMISException(t('Unable to lookup CMIS transport [@cmis_transport] for [@cmis_id_or_alias]', array(
+        '@cmis_id_or_alias' => $repositry_id,
+        '@cmis_transport' => $cmis_transport)
+      )
+      );
+    }
+  }
+
+  public function getRepository($id_or_alias = NULL) {
+    static $repositories_cache;
+    $cmis_repository = NULL;
+
+    if (empty($id_or_alias)) {
+      // @todo identify this use object to retrive cmis repository.
+      $id_or_alias = isset($user->cmis_repository) ? $user->cmis_repository : 'default';
+    }
+
+    // Init repository cache.
+    if (is_null($repositories_cache)) {
+      $repositories_cache = array();
+    }
+
+    // Lookup repository in cache.
+    if (array_key_exists($id_or_alias, $repositories_cache)) {
+      $cmis_repository = $repositories_cache[$id_or_alias];
+    }
+    else {
+      // @todo load cmis repositories from configuration
+      // $config_cmis_repos = variable_get('cmis_repositories', array());
+
+      if (array_key_exists($id_or_alias, $config_cmis_repos)) {
+        // Setup temp repository details.
+        $cmis_repository = new stdClass();
+        $repositories_cache[$id_or_alias] = $cmis_repository;
+
+        // Setup settings.
+        $cmis_repository->settings = $config_cmis_repos[$id_or_alias];
+
+        // Merge in defaults.
+        $cmis_repository->settings += array('transport' => 'cmis_common');
+
+        // Init cmis repository.
+        $cmis_repository->info = cmisapi_getRepositoryInfo($id_or_alias);
+        $cmis_repository->repositoryId = $cmis_repository->info->repositoryInfo['cmis:repositoryId'];
+
+        // Save repo description in cache.
+        $repositories_cache[$cmis_repository->repositoryId] = & $repositories_cache[$id_or_alias];
+      }
+      else {
+        //throw new CMISException(t('Unable to lookup CMIS repository [@cmis_id_or_alias]', array('@cmis_id_or_alias' => $id_or_alias)));
+      }
+    }
+
+    return $cmis_repository;
   }
 
   public function getRepositories($endpoint_service) {
@@ -198,6 +291,45 @@ class Api {
 
   public function getAppliedPolicies($repositoryId, $objectId) {
     return $this->cmisModule->vendorInvoke('getAppliedPolicies', $repositoryId, $objectId);
+  }
+
+  /**
+   * Vendor services.
+   */
+  public function getVendors() {
+    $vendors = array();
+    // @todo unknown method module_invoke_all.
+    //$info_array = module_invoke_all('cmis_info');
+    foreach ($info_array as $type => $info) {
+      $info['type'] = $type;
+      $vendors[$type] = $info;
+    }
+
+    return $vendors;
+  }
+
+  public function vendorInvoke() {
+    // @todo Load cmis vendor and common.
+    //$vendor = variable_get('cmis_vendor', 'cmis_common');
+
+    $args = func_get_args();
+    $cmis_method = $args[0];
+
+    $vendors = $this->getVendors();
+    if (array_key_exists($vendor, $vendors)) {
+      if (function_exists($vendor . '_cmisapi_invoke')) {
+        return call_user_func_array($vendor . '_cmisapi_invoke', $args);
+      }
+      else {
+        unset($args[0]);
+        $function = $vendor . '_cmisapi_' . $cmis_method;
+        if (function_exists($function)) {
+          return call_user_func_array($function, $args);
+        }
+        //throw new CMISException(t('@function not implemented by @vendor CMIS vendor', array('@function' => $function, '@vendor' => $vendor)));
+      }
+    }
+    //throw new CMISException(t('Unknown CMIS vendor: @vendor', array('@vendor' => $vendor)));
   }
 
 }

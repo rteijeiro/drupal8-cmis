@@ -1,0 +1,21 @@
+# Schema for the configuration files of the CMIS module.
+
+cmis.vendor:
+  type: mapping
+  label: 'CMIS vendor'
+  mapping:
+    cmis_common:
+      type: string
+      label: 'CMIS common'
+cmis_repositories:
+  type: sequence
+  sequence:
+    type: mapping
+    mapping:
+      name:
+        type: string
+        label: 'Repository machine name'
+      label:
+        type: string
+        label: 'Repository label'
+

@@ -1,0 +1,57 @@
+cmis.common.lib.check:
+  path: 'admin/settings/cmis/common'
+  defaults:
+    _controller: '\Drupal\cmis\Controller\CommonController::checkClasses'
+  requirements:
+    _permission: 'access cmis'
+cmis.repository:
+  path: '/cmis/browser'
+  defaults:
+    _controller: '\Drupal\cmis\Controller\IndexController::cmis_browser_content_get'
+  requirements:
+    _permission: 'access cmis'
+cmis.delete:
+  path: '/cmis/delete'
+  defaults:
+    _form: '\Drupal\cmis\Form\CmisBrowserContentDeleteConfirmForm'
+    _title: 'Cmis Delete'
+  requirements:
+    _permission: 'access cmis'
+cmis.properties:
+  path: '/cmis/properties'
+  defaults:
+    _controller: '\Drupal\cmis\Controller\IndexController::cmis_browser_content_properties'
+  requirements:
+    _permission: 'access cmis'
+cmis.autocomplete:
+  path: '/cmis/autocomplete'
+  defaults:
+    _controller: '\Drupal\cmis\Controller\IndexController::cmis_browser_autocomplete'
+  requirements:
+    _permission: 'access cmis'
+cmis.tree:
+  path: '/cmis/tree'
+  defaults:
+    _controller: '\Drupal\cmis\Controller\IndexController::cmis_browser_tree'
+  requirements:
+    _permission: 'access cmis'
+cmis.admin.browser:
+  path: '/admin/settings/cmis/browser'
+  defaults:
+    _form: '\Drupal\cmis\Form\CmisBrowserAdminSettingsForm'
+  requirements:
+    _permission: 'administer cmis'
+cmis.query:
+  path: 'cmis/query'
+  defaults:
+    _form: '\Drupal\cmis\Form\QueryForm'
+    _title: 'CMIS Query '
+  requirements:
+    _permission: 'access cmis'
+cmis.dev.info:
+  path: 'admin/cmis/info'
+  defaults:
+    _controller: '\Drupal\cmis\Controller\DevController::cmis_dev_info'
+  requirements:
+    _permission: 'access cmis'
+

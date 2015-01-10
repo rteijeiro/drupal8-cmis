@@ -1,0 +1,9 @@
+access cmis:
+  title: 'Access CMIS data'
+  description: 'Access data from the CMIS repository'
+  restrict access: true
+administer cmis:
+  title: 'Administer CMIS'
+  description: 'Perform administrative tasks related to the CMIS module'
+  restrict access: true
+

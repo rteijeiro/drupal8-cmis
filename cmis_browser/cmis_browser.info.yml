@@ -1,0 +1,9 @@
+name: CMIS Browser
+description: Allows users to browse the a CMIS repository tree.
+package: CMIS
+type: module
+dependencies:
+ - cmis
+core: "8.x"
+configure: cmis.browser
+

@@ -38,7 +38,7 @@ cmis.tree:
 cmis.admin.browser:
   path: '/admin/settings/cmis/browser'
   defaults:
-    _form: '\Drupal\cmis\Form\CmisBrowserAdminSettingsForm'
+    _form: '\Drupal\cmis\Form\CmisBrowserSettingsForm'
   requirements:
     _permission: 'administer cmis'
 cmis.query:

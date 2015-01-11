@@ -7,7 +7,7 @@ cmis.common.lib.check:
 cmis.repository:
   path: '/cmis/browser'
   defaults:
-    _controller: '\Drupal\cmis\Controller\IndexController::cmis_browser_content_get'
+    _controller: '\Drupal\cmis\Controller\IndexController::getContent'
   requirements:
     _permission: 'access cmis'
 cmis.delete:
@@ -20,19 +20,19 @@ cmis.delete:
 cmis.properties:
   path: '/cmis/properties'
   defaults:
-    _controller: '\Drupal\cmis\Controller\IndexController::cmis_browser_content_properties'
+    _controller: '\Drupal\cmis\Controller\IndexController::contentProperties'
   requirements:
     _permission: 'access cmis'
 cmis.autocomplete:
   path: '/cmis/autocomplete'
   defaults:
-    _controller: '\Drupal\cmis\Controller\IndexController::cmis_browser_autocomplete'
+    _controller: '\Drupal\cmis\Controller\IndexController::browserAutocomplete'
   requirements:
     _permission: 'access cmis'
 cmis.tree:
   path: '/cmis/tree'
   defaults:
-    _controller: '\Drupal\cmis\Controller\IndexController::cmis_browser_tree'
+    _controller: '\Drupal\cmis\Controller\IndexController::browserTree'
   requirements:
     _permission: 'access cmis'
 cmis.admin.browser:

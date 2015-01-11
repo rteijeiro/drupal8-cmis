@@ -7,7 +7,7 @@
 
 namespace Drupal\cmis\lib;
 
-use Drupal\cmis\lib\CMISRepositoryWrapper;
+use Drupal\cmis\lib\CmisRepositoryWrapper;
 
 // Option Contants for Array Indexing
 // -- Generally optional flags that control how much information is returned

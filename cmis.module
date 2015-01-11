@@ -6,7 +6,7 @@
  */
 
 use Drupal\cmis\CMISException;
-use Drupal\cmis\CommonCMISService;
+use Drupal\cmis\CommonCmisService;
 use Drupal\Core\Entity\EntityInterface;
 
 function cmis_get_repository($id_or_alias = NULL) {

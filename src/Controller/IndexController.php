@@ -6,6 +6,7 @@
  */
 
 namespace Drupal\cmis\Controller;
+
 use Drupal\Component\Utility\UrlHelper;
 use Drupal\cmis\CMISException;
 
@@ -17,7 +18,7 @@ class IndexController  {
   /**
    * Build cmis_browser browse page.
    */
-  function cmis_browser_content_get() {
+  public function getContent() {
 
     // @todo Replace use of module_load_include function.
     module_load_include('inc', 'cmis','cmis.api');
@@ -30,11 +31,11 @@ class IndexController  {
 
       switch ($object->properties['cmis:baseTypeId']) {
         case 'cmis:document':
-          return _cmis_browser_content_get_document($repository, $object);
+          return $this->getDocument($repository, $object);
           break;
 
         case 'cmis:folder':
-          return _cmis_browser_content_get_folder($repository, $object, array_slice(explode('/', $_GET['q']), 2));
+          return $this->getFolder($repository, $object, array_slice(explode('/', $_GET['q']), 2));
           break;
 
         default:
@@ -54,7 +55,7 @@ class IndexController  {
   /**
    * CMIS document download handler.
    */
-  function _cmis_browser_content_get_document($repository, $object) {
+  public function getDocument($repository, $object) {
     // @todo Replace use of module_load_include function.
     module_load_include('api.inc', 'cmis');
 
@@ -89,7 +90,7 @@ class IndexController  {
   /**
    * CMIS folder browser handler.
    */
-  function _cmis_browser_content_get_folder($repository, $object) {
+  public function getFolder($repository, $object) {
     try {
       $children = cmisapi_getChildren($repository->repositoryId, $object->id)->objectList;
     }
@@ -99,17 +100,19 @@ class IndexController  {
     }
 
     $hook = (!empty($_GET['type']) && $_GET['type'] == 'popup') ? 'cmis_browser_popup' : 'cmis_browser';
-    return theme($hook, array(
-      'children' => $children,
-      'bcarray' => explode('/',substr($object->properties['cmis:path'],1)),
-      'type' => !empty($_GET['type']) ? check_plain($_GET['type']) : '',
-    ));
+    return array(
+      '#theme' => 'repository_folder',
+      '#hook' => $hook,
+      '#children' => $children,
+      '#bcarray' => explode('/',substr($object->properties['cmis:path'],1)),
+      '#type' => !empty($_GET['type']) ? check_plain($_GET['type']) : '',
+    );
   }
 
   /**
    * CMIS object properties page.
    */
-  function cmis_browser_content_properties() {
+  public function contentProperties() {
     module_load_include('api.inc', 'cmis');
     module_load_include('utils.inc', 'cmis_browser');
 
@@ -135,7 +138,7 @@ class IndexController  {
   /**
    * Cmis folder picker autocomplete callback.
    */
-  function cmis_browser_autocomplete() {
+  public function browserAutocomplete() {
     module_load_include('api.inc', 'cmis');
 
     $args = func_get_args();
@@ -178,7 +181,7 @@ class IndexController  {
   /**
    * TreeView callback for cmis_browser.
    */
-  function cmis_browser_tree() {
+  public function browserTree() {
     module_load_include('api.inc', 'cmis');
 
     $root = $_REQUEST['id'];

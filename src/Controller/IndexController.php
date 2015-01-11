@@ -9,6 +9,7 @@ namespace Drupal\cmis\Controller;
 
 use Drupal\Component\Utility\UrlHelper;
 use Drupal\cmis\CMISException;
+use Drupal\cmis\CmisApi;
 
 /**
  * Defines the controller for Browser.
@@ -20,9 +21,8 @@ class IndexController  {
    */
   public function getContent() {
 
-    // @todo Replace use of module_load_include function.
-    module_load_include('inc', 'cmis','cmis.api');
-    module_load_include('inc', 'cmis','cmis.utils');
+    \Drupal::ModuleHandler()->loadInclude('cmis', 'inc', 'cmis.api');
+    \Drupal::ModuleHandler()->loadInclude('cmis', 'inc', 'cmis.utils');
 
     // Invoke CMIS service.
     try {
@@ -56,8 +56,7 @@ class IndexController  {
    * CMIS document download handler.
    */
   public function getDocument($repository, $object) {
-    // @todo Replace use of module_load_include function.
-    module_load_include('api.inc', 'cmis');
+    \Drupal::ModuleHandler()->loadInclude('cmis', 'inc', 'cmis.api');
 
     try {
       $content = cmisapi_getContentStream($repository->repositoryId, $object->id);
@@ -113,8 +112,8 @@ class IndexController  {
    * CMIS object properties page.
    */
   public function contentProperties() {
-    module_load_include('api.inc', 'cmis');
-    module_load_include('utils.inc', 'cmis_browser');
+    \Drupal::ModuleHandler()->loadInclude('cmis', 'inc', 'cmis.api');
+    \Drupal::ModuleHandler()->loadInclude('cmis', 'inc', 'cmis.utils');
 
     // Invoke CMIS service
     try {
@@ -139,7 +138,7 @@ class IndexController  {
    * Cmis folder picker autocomplete callback.
    */
   public function browserAutocomplete() {
-    module_load_include('api.inc', 'cmis');
+    \Drupal::ModuleHandler()->loadInclude('cmis', 'inc', 'cmis.api');
 
     $args = func_get_args();
     $path = '/'. implode('/', array_slice($args, 0, sizeof($args) - 1));
@@ -182,7 +181,7 @@ class IndexController  {
    * TreeView callback for cmis_browser.
    */
   public function browserTree() {
-    module_load_include('api.inc', 'cmis');
+    \Drupal::ModuleHandler()->loadInclude('cmis', 'inc', 'cmis.api');
 
     $root = $_REQUEST['id'];
 
@@ -215,6 +214,48 @@ class IndexController  {
     }
 
     drupal_json_output($result);
+  }
+
+  function contentFromRequest($repository) {
+    $object_id = NULL;
+    $object_path = NULL;
+    $bcarray = array_slice(explode('/', $_GET['q']), 2);
+    if (count($bcarray) == 0 ){
+      $bcarray = array_slice(explode('/', \Drupal::config('cmis.settings')->get('cmis_browser_root')), 0);
+    }
+
+    if (array_key_exists('id', $_GET)) {
+      // Grab objectId from GET.
+      $object_id = urldecode($_GET['id']);
+    }
+    elseif (!empty($bcarray)) {
+      // Grab path.
+      $object_path = UrlHelper::encodePath('/'. implode('/', $bcarray));
+    }
+    elseif (array_key_exists('browser_default_folderId', $repository->settings)) {
+      // Grab default folderId from repository's settings.
+      $object_id = $repository->settings['browser_default_folderId'];
+    }
+    elseif (array_key_exists('browser_default_folderPath', $repository->settings)) {
+      // Grab default folderPath from repository's settings.
+      $object_path = UrlHelper::encodePath($repository->settings['browser_default_folderPath']);
+    }
+    else {
+      // Fallback to repository's root folderId.
+      $object_id = $repository->info->repositoryInfo['cmis:rootFolderId'];
+    }
+
+    if (!is_null($object_id)) {
+      $object = cmisapi_getProperties($repository->repositoryId, $object_id);
+    }
+    elseif (!is_null($object_path)) {
+      $object = cmisapi_getObjectByPath($repository->repositoryId, $object_path);
+    }
+    else {
+      throw new CMISException('Unknown CMIS object');
+    }
+
+    return $object;
   }
 
 }

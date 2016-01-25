@@ -1,0 +1,7 @@
+This is the proposal of the steps to follow for porting the different CMIS modules:
+
+- Port cmis.module to get access to CMIS client API.
+- Port cmis_browser.module to present repository content.
+- Replace cmis_common.module with a proper ntegration with libraries module.
+- Port cmis_query.module to provide a way to send queries to repository.
+- Port cmis_sync.module to syncronise CMIS objects with a Drupal content entity.

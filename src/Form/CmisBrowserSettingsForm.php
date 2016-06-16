@@ -78,6 +78,11 @@ class CmisBrowserSettingsForm extends ConfigFormBase  {
 
     parent::submitForm($form, $form_state);
   }
+  
+  protected function getEditableConfigNames() {
+    // TODO: Implement getEditableConfigNames() method.
+  }
+  
 
 }
 

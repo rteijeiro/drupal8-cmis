@@ -489,12 +489,22 @@ class CMISRepositoryWrapper
         if($xmlnode->getElementsByTagName("object")->item(0)) {
         $prop_nodes = $xmlnode->getElementsByTagName("object")->item(0)->getElementsByTagName("properties")->item(0)->childNodes;
         }
-            foreach ($prop_nodes as $pn)
-        {
-        	if ($pn->attributes) {
-				//supressing errors since PHP sometimes sees DOM elements as "non-objects"
-				@$retval->properties[$pn->attributes->getNamedItem("propertyDefinitionId")->nodeValue] = $pn->getElementsByTagName("value")->item(0)->nodeValue;
-			}
+        
+        foreach ($prop_nodes as $pn) {
+            if ($pn->attributes) {
+                //supressing errors since PHP sometimes sees DOM elements as "non-objects"
+
+              if($pn->getElementsByTagName("value")->length > 1) {
+                $property_values = array();
+                for ($i=0;$i < $pn->getElementsByTagName("value")->length; $i++) {
+                  $property_values[$i] = $pn->getElementsByTagName("value")->item($i)->nodeValue;
+                }
+                @$retval->properties[$pn->attributes->getNamedItem("propertyDefinitionId")->nodeValue] = $property_values;
+              }
+              else{
+                @$retval->properties[$pn->attributes->getNamedItem("propertyDefinitionId")->nodeValue] = $pn->getElementsByTagName("value")->item(0)->nodeValue;
+              }
+            }
         }
         
         $retval->uuid = $xmlnode->getElementsByTagName("id")->item(0)->nodeValue;
